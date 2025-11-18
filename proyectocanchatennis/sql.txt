@@ -1,0 +1,44 @@
+-- Base de datos: reserva_canchas
+CREATE DATABASE reserva_canchas;
+USE reserva_canchas;
+
+-- Tabla de usuarios
+CREATE TABLE usuarios (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    tipo ENUM('admin', 'socio') DEFAULT 'socio',
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de canchas
+CREATE TABLE canchas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    estado ENUM('disponible', 'mantenimiento', 'ocupada') DEFAULT 'disponible'
+);
+
+-- Tabla de reservas
+CREATE TABLE reservas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    usuario_id INT,
+    cancha_id INT,
+    fecha DATE NOT NULL,
+    hora TIME NOT NULL,
+    estado ENUM('confirmada', 'cancelada', 'completada') DEFAULT 'confirmada',
+    fecha_reserva TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    FOREIGN KEY (cancha_id) REFERENCES canchas(id)
+);
+
+-- Insertar canchas
+INSERT INTO canchas (nombre, estado) VALUES 
+('Cancha 1', 'disponible'),
+('Cancha 2', 'disponible'),
+('Cancha 3', 'disponible');
+
+-- Insertar usuario admin por defecto
+INSERT INTO usuarios (nombre, email, password, tipo) VALUES 
+('Administrador', 'admin@tenis.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+-- Contraseña: password
