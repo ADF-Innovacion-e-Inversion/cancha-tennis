@@ -4,29 +4,48 @@ include 'config.php';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $nombre = trim($_POST['nombre']);
     $email = trim($_POST['email']);
-    $password = trim($_POST['password']);
-    $confirm_password = trim($_POST['confirm_password']);
     
     // Validaciones
-    if ($password !== $confirm_password) {
-        $error = "Las contraseñas no coinciden";
+    $rut_limpio = str_replace(["-", " "], "", $nombre);
+
+    // Validación de la longitud mínima del rut
+    if (strlen($rut_limpio) < 4) {
+        $error = "RUT inválido";
     } else {
-        // Verificar si el email ya existe
-        $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
-        $stmt->execute([$email]);
-        
+
+        // Quitar dígito verificador
+        $rut_sin_dv = substr($rut_limpio, 0, -1);
+
+        // Contraseña automática: Los últimos 4 dígitos del RUT
+        $password_plano = substr($rut_sin_dv, -4);
+        $hashed_password = password_hash($password_plano, PASSWORD_DEFAULT);
+
+        // Verificar si el RUT ya existe
+        $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE nombre = ?");
+        $stmt->execute([$nombre]);
+
         if ($stmt->rowCount() > 0) {
-            $error = "El email ya está registrado";
+            $error = "El RUT ya está registrado";
         } else {
-            // Crear usuario
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("INSERT INTO usuarios (nombre, email, password, tipo) VALUES (?, ?, ?, 'socio')");
-            
-            if ($stmt->execute([$nombre, $email, $hashed_password])) {
-                header('Location: login.php?registered=1');
-                exit();
+            // Verificar si el correo ya existe
+            $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
+            $stmt->execute([$email]);
+
+            if ($stmt->rowCount() > 0) {
+                $error = "El correo ya está registrado";
             } else {
-                $error = "Error al crear la cuenta";
+                // Crear usuario
+                $stmt = $pdo->prepare("
+                    INSERT INTO usuarios (nombre, email, password, tipo)
+                    VALUES (?, ?, ?, 'socio')
+                ");
+
+                if ($stmt->execute([$nombre, $email, $hashed_password])) {
+                    header('Location: login.php?registered=1');
+                    exit();
+                } else {
+                    $error = "Error al crear la cuenta";
+                }
             }
         }
     }
@@ -59,23 +78,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     <form method="POST">
         <div class="form-group">
-            <label>Nombre completo:</label>
-            <input type="text" name="nombre" required>
+            <label>Nombre usuario:</label>
+            <input type="text" name="nombre" required placeholder="Ej: 12345678-9">
         </div>
         
         <div class="form-group">
             <label>Email:</label>
-            <input type="email" name="email" required>
-        </div>
-        
-        <div class="form-group">
-            <label>Contraseña:</label>
-            <input type="password" name="password" required>
-        </div>
-        
-        <div class="form-group">
-            <label>Confirmar Contraseña:</label>
-            <input type="password" name="confirm_password" required>
+            <input type="email" name="email" required placeholder="Ej: usuario@gmail.com">
         </div>
         
         <button type="submit">Registrarse</button>

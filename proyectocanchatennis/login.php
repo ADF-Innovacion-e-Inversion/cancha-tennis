@@ -177,6 +177,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             20%, 40%, 60%, 80% { transform: translateX(5px); }
 
         }
+
+        .register-link {
+            margin-top: 20px;   /* ajusta el valor a gusto */
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -217,6 +222,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
                 <button type="submit" class="btn">Iniciar Sesión</button>
             </form>
+
+            <div class="register-link">
+                <a href="register.php">¿No tienes cuenta? Crea una aquí</a>
+            </div>
         </div>
     </div>
 </body>
