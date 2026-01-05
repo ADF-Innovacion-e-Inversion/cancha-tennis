@@ -35,19 +35,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
     $cancha_id = $_POST['cancha_id'];
     $hora = $_POST['hora'];
     
-    // Verificar si la cancha está disponible
-    $stmt = $pdo->prepare("SELECT id FROM reservas WHERE cancha_id = ? AND fecha = ? AND hora = ? AND estado = 'confirmada'");
-    $stmt->execute([$cancha_id, $fecha, $hora]);
-    
-    if ($stmt->rowCount() == 0) {
-        $stmt = $pdo->prepare("INSERT INTO reservas (usuario_id, cancha_id, fecha, hora) VALUES (?, ?, ?, ?)");
-        if ($stmt->execute([$_SESSION['user_id'], $cancha_id, $fecha, $hora])) {
-            header("Location: index.php?fecha=$fecha&success=1");
-            exit();
-        }
+    // Validación: mínimo 3 días
+    $hoy = new DateTime();           // Fecha actual
+    $fechaCancha = new DateTime($fecha);
+    $fechaMinima = (clone $hoy)->modify('+3 days');
+
+    if ($fechaCancha < $fechaMinima) {
+        $error = "Las reservas deben realizarse con al menos 3 días de anticipación.";
     } else {
-        $error = "La cancha ya está reservada en ese horario";
+
+        // 2. Validación: 1 reserva cada 24 hrs
+        $stmt = $pdo->prepare("
+            SELECT fecha_reserva
+            FROM reservas
+            WHERE usuario_id = ?
+            AND estado = 'confirmada'
+            ORDER BY fecha_reserva DESC
+            LIMIT 1
+        ");
+        $stmt->execute([$_SESSION['user_id']]);
+        $ultimaReserva = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($ultimaReserva) {
+            $fechaUltima = new DateTime($ultimaReserva['fecha_reserva']);
+            $proximaPermitida = (clone $fechaUltima)->modify('+24 hours');
+
+            if (new DateTime() < $proximaPermitida) {
+                $error = "Solo puedes realizar una reserva cada 24 horas.";
+            }
+        } else {
+            // Verificar si la cancha está disponible
+            $stmt = $pdo->prepare("SELECT id FROM reservas WHERE cancha_id = ? AND fecha = ? AND hora = ? AND estado = 'confirmada'");
+            $stmt->execute([$cancha_id, $fecha, $hora]);
+            
+            if ($stmt->rowCount() == 0) {
+                $stmt = $pdo->prepare("INSERT INTO reservas (usuario_id, cancha_id, fecha, hora) VALUES (?, ?, ?, ?)");
+                if ($stmt->execute([$_SESSION['user_id'], $cancha_id, $fecha, $hora])) {
+                    header("Location: index.php?fecha=$fecha&success=1");
+                    exit();
+                }
+            } else {
+                $error = "La cancha ya está reservada en ese horario";
+            }
+        }
+
     }
+
+    
 }
 ?>
 
