@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
         $error = "Las reservas deben realizarse con al menos 3 días de anticipación.";
     } else {
 
-        // 2. Validación: 1 reserva cada 24 hrs
+        // Validación: 1 reserva cada 24 hrs
         $stmt = $pdo->prepare("
             SELECT fecha_reserva
             FROM reservas
@@ -152,15 +152,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
         <tbody>
             <?php foreach ($horas as $hora): ?>
                 <tr>
-                    <td><?php echo date('H:i', strtotime($hora)); ?></td>
+                    <td> 
+                        <?php echo date("H:i", strtotime($hora["inicio"])); //Se le da el formato a la hora (inicio - final) ?>
+                        -
+                        <?php echo date("H:i", strtotime($hora["fin"])); ?>
+                    </td>
                     <?php foreach ($canchas as $cancha): ?>
-                        <td class="<?php echo isset($reservas_organizadas[$cancha['id']][$hora]) ? 'ocupada' : ($cancha['estado'] == 'disponible' ? 'disponible' : 'ocupada'); ?>">
-                            <?php if (isset($reservas_organizadas[$cancha['id']][$hora])): ?>
+                        <td class="<?php echo isset($reservas_organizadas[$cancha['id']][$hora["inicio"]]) ? 'ocupada' : ($cancha['estado'] == 'disponible' ? 'disponible' : 'ocupada'); ?>">
+                            <?php if (isset($reservas_organizadas[$cancha['id']][$hora["inicio"]])): ?>
                                 Ocupada
                             <?php elseif ($cancha['estado'] == 'disponible'): ?>
                                 <form method="POST" style="margin: 0;">
                                     <input type="hidden" name="cancha_id" value="<?php echo $cancha['id']; ?>">
-                                    <input type="hidden" name="hora" value="<?php echo $hora; ?>">
+                                    <input type="hidden" name="hora" value="<?php echo $hora["inicio"]; //Se utiliza la hora de inicio para reservar los bloques ?>">
                                     <button type="submit" name="reservar" class="reservar-btn">Reservar</button>
                                 </form>
                             <?php else: ?>

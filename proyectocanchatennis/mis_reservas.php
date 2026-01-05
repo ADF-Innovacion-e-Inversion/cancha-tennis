@@ -72,10 +72,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
             </thead>
             <tbody>
                 <?php foreach ($reservas as $reserva): ?>
+                    <?php $bloque = obtenerBloqueHora($reserva["hora"]);    //Aca se usa una funcion helper para obtener la hora de inicio y de fin para mostrar al cliente ?>
                     <tr>
                         <td><?php echo $reserva['cancha_nombre']; ?></td>
                         <td><?php echo date('d/m/Y', strtotime($reserva['fecha'])); ?></td>
-                        <td><?php echo date('H:i', strtotime($reserva['hora'])); ?></td>
+                        <td>
+                            <?php if ($bloque): ?>
+                                <?php echo date("H:i", strtotime($bloque["inicio"])); ?>
+                                -
+                                <?php echo date("H:i", strtotime($bloque["fin"])); ?>
+                            <?php else: ?>
+                                <?php echo date("H:i", strtotime($reserva["hora"])); ?>
+                            <?php endif; ?>
+                        </td>
                         <td><?php echo date('d/m/Y H:i', strtotime($reserva['fecha_reserva'])); ?></td>
                         <td>
                             <form method="POST">

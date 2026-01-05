@@ -25,12 +25,43 @@ function isAdmin() {
     return isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
 }
 
-// Función para obtener horas disponibles
+// Función para obtener horas disponibles, las horas se guardan como array para poder almacenar su hora de inicio y de fin
 function getHorasDisponibles() {
     return [
-        '08:00:00', '09:00:00', '10:00:00', '11:00:00', 
-        '12:00:00', '13:00:00', '14:00:00', '15:00:00', 
-        '16:00:00', '17:00:00', '18:00:00', '19:00:00'
+        [
+            "inicio" => "07:30:00",
+            "fin"    => "08:30:00"
+        ],
+        [
+            "inicio" => "09:00:00",
+            "fin"    => "10:30:00"
+        ],
+        [
+            "inicio" => "11:00:00",
+            "fin"    => "12:30:00"
+        ],
+        [
+            "inicio" => "18:00:00",
+            "fin"    => "19:30:00"
+        ],
+        [
+            "inicio" => "20:00:00",
+            "fin"    => "21:30:00"
+        ],
+        [
+            "inicio" => "22:00:00",
+            "fin"    => "23:30:00"
+        ]
     ];
+}
+
+// Función para mostrar los bloques con sus horas de inicio y fin respectivas
+function obtenerBloqueHora($horaInicio) {
+    foreach (getHorasDisponibles() as $bloque) {
+        if ($bloque["inicio"] === $horaInicio) {
+            return $bloque;
+        }
+    }
+    return null;
 }
 ?>
