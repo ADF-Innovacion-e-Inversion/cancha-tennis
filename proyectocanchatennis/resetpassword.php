@@ -37,14 +37,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - Reserva de Canchas</title>
+    <title>Reestablecer Contraseña</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; }
-        .form-group { margin-bottom: 15px; }
+        .form-group { 
+            margin-bottom: 15px; 
+            display: flex;
+            flex-direction: column;
+        }
         label { display: block; margin-bottom: 5px; }
         input[type="text"], input[type="email"], input[type="password"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #218838; }
+        /* 🔽 BOTÓN VERDE CON EFECTOS */
+        button {
+            display: block;
+            width: 97%;
+            margin: 0 auto;
+            padding: 12px;
+            background: linear-gradient(135deg, #28a745, #218838);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition:
+                background 0.3s ease,
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
         .error { color: red; margin-bottom: 15px; }
         .login-link { text-align: center; margin-top: 20px; }
     </style>
@@ -58,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     <form method="POST">
         <div class="form-group">
-            <label>Contraseña:</label>
+            <label>Nueva Contraseña:</label>
             <input type="password" name="password" required>
         </div>
 
