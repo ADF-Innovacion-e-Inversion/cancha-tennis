@@ -2,11 +2,11 @@
 include 'config.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = trim($_POST['email']);
+    $nombre = trim($_POST['nombre']); // Ahora se loguean con el RUT
     $password = trim($_POST['password']);
     
-    $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = ?");
-    $stmt->execute([$email]);
+    $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE nombre = ?");
+    $stmt->execute([$nombre]);
     $user = $stmt->fetch();
     
     if ($user && password_verify($password, $user['password'])) {
@@ -14,14 +14,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['user_name'] = $user['nombre'];
         $_SESSION['user_type'] = $user['tipo'];
         
+        // Login Admin
         if ($user['tipo'] === 'admin') {
             header('Location: admin.php');
         } else {
-            header('Location: index.php');
-        }
-        exit();
+           // Forzar cambio de contraseña si es temporal
+            if ($user['password_temporal'] == 1) {
+                header('Location: resetpassword.php');
+                exit();
+            } else {
+                header('Location: index.php');
+            }
+            exit(); 
+        }      
+        
     } else {
-        $error = "Email o contraseña incorrectos";
+        $error = "Usuario o contraseña incorrectos";
     }
 }
 ?>
@@ -213,8 +221,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             <form method="POST" action="login.php">
                 <div class="form-group">
-                    <label for="login-email">Correo Electrónico</label>
-                    <input type="email" id="login-email" name="email" placeholder="Ingresa tu correo" required maxlength="50">
+                    <label for="login-nombre">Usuario (RUT)</label>
+                    <input type="text" id="login-nombre" name="nombre" placeholder="12345678-9" required>
                 </div>
                 <div class="form-group">
                     <label for="login-password">Contraseña</label>
@@ -257,8 +265,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <button type="submit", class="login-btn">Ingresar</button>
     </form>
     
-    <!-- <div class="register-link">
+     <div class="register-link">
         <a href="register.php">¿No tienes cuenta? Regístrate aquí</a>
     </div> -->
-<!-- </body> --> -->
+<!-- </body> --> 
 </html>

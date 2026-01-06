@@ -36,8 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             } else {
                 // Crear usuario
                 $stmt = $pdo->prepare("
-                    INSERT INTO usuarios (nombre, email, password, tipo)
-                    VALUES (?, ?, ?, 'socio')
+                    INSERT INTO usuarios (nombre, email, password, tipo, password_temporal)
+                    VALUES (?, ?, ?, 'socio', 1)
                 ");
 
                 if ($stmt->execute([$nombre, $email, $hashed_password])) {
