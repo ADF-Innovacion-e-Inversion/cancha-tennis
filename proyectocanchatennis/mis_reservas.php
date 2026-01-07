@@ -36,22 +36,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Reservas</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; background-color: #fbeedbff;}
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: collapse; background-color: #f5f5f5;}
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background: #f8f9fa; }
         .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
         .btn { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; text-decoration: none; display: inline-block; }
         .btn-danger { background: #dc3545; color: white; }
+        .logout-link:hover{opacity: 0.5;}
+        .logout-link {
+            color: #1d6cd2ff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .logout-link:visited {color: #1d6cd2ff;}
+        .Main-link:hover{opacity: 0.5;}
+        .Main-link {
+            color: #1d6cd2ff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .Main-link:visited {color: #1d6cd2ff;}
+        .vacio {
+            font-size: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Mis Reservas</h1>
         <div>
-            <a href="index.php">Volver al Sistema</a> |
-            <a href="logout.php">Cerrar Sesión</a>
+            <a href="index.php" class="Main-link">Volver al Sistema</a> |
+            <a href="logout.php" class="logout-link">Cerrar Sesión</a>
         </div>
     </div>
 
@@ -100,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
             </tbody>
         </table>
     <?php else: ?>
-        <p>No tienes reservas activas.</p>
+        <p class="vacio">No tienes reservas activas.</p>
     <?php endif; ?>
 </body>
 </html>

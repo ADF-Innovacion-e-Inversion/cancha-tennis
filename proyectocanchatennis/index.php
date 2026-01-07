@@ -92,18 +92,61 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reserva de Canchas</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #fbeedbff;}
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         /* .header h1 {text-shadow: 2px 5px 5px green}; */
         .filtro { margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: collapse; background-color: #f5f5f5;}
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background: #f8f9fa; }
         .disponible { background: #d4edda; cursor: pointer; }
         .ocupada { background: #f8d7da; }
         .reservar-btn { padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
         .reservar-btn:hover { background: #0056b3; }
-        .nav-links { margin-top: 20px; }
+        .reservation-link { margin-top: 20px; }
+        .reservation-link:hover{opacity: 0.5;}
+        .reservation-link {
+            color: #1d6cd2ff
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .reservation-link:visited {color: #1d6cd2ff}
+        .logout-link:hover{opacity: 0.5;}
+        .logout-link {
+            color: #1d6cd2ff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .logout-link:visited {color: #1d6cd2ff;}
+        .Admin-link:hover{opacity: 0.5;}
+        .Admin-link {
+            color: #1d6cd2ff; 
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .Admin-link:visited {color: #1d6cd2ff;}
+        h3 {
+            font-size: 20px;
+        }
+        .Bienvenida {
+            font-size: 18px;
+        }
+        .Filtro {
+            font-size: 18px;
+
+        }
+        .boton-filtro {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 4px 8px;
+        }
+        input[name="fecha"] {
+            font-size: 15px;     /* tamaño del texto */
+            padding: 8px 8px;  /* altura del campo */
+            width: 150px;        /* ancho del calendario */
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
         .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
         .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
     </style>
@@ -111,12 +154,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
 <body>
     <div class="header">
         <h1>Sistema de Reserva de Canchas</h1>
-        <div>
+        <div class="Bienvenida">
             Bienvenido, <?php echo $_SESSION['user_name']; ?> | 
             <?php if (isAdmin()): ?>
-                <a href="admin.php">Administración</a> |
+                <a href="admin.php" class="Admin-link">Administración</a> |
             <?php endif; ?>
-            <a href="logout.php">Cerrar Sesión</a>
+            <a href="logout.php" class="logout-link">Cerrar Sesión</a>
         </div>
     </div>
 
@@ -130,9 +173,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
 
     <div class="filtro">
         <form method="GET">
-            <label>Filtrar por fecha:</label>
+            <label class="Filtro">Filtrar por fecha:</label>
             <input type="date" name="fecha" value="<?php echo $fecha; ?>" min="<?php echo date('Y-m-d'); ?>">
-            <button type="submit">Filtrar</button>
+            <button type="submit" class="boton-filtro">Filtrar</button>
         </form>
     </div>
 
@@ -179,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
 
     <div class="nav-links">
         <h3>Mis Reservas</h3>
-        <a href="mis_reservas.php">Ver mis reservas activas</a>
+        <a href="mis_reservas.php" class="reservation-link">Ver mis reservas activas</a>
     </div>
 </body>
 </html>

@@ -48,10 +48,10 @@ $reservas = $pdo->query("
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #fbeedbff;}
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .section { margin-bottom: 30px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f5f5f5;}
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background: #f8f9fa; }
         .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
@@ -59,15 +59,32 @@ $reservas = $pdo->query("
         .btn { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; text-decoration: none; display: inline-block; }
         .btn-danger { background: #dc3545; color: white; }
         .btn-primary { background: #007bff; color: white; }
+        .logout-link:hover{opacity: 0.5;}
+        .logout-link {
+            color: #1d6cd2ff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .logout-link:visited {color: #1d6cd2ff;}
+        .Main-link:hover{opacity: 0.5;}
+        .Main-link {
+            color: #1d6cd2ff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .Main-link:visited {color: #1d6cd2ff;}
+        .Bienvenida {
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Panel de Administración</h1>
-        <div>
+        <div class="Bienvenida">
             Bienvenido, <?php echo $_SESSION['user_name']; ?> | 
-            <a href="index.php">Ir al Sistema</a> |
-            <a href="logout.php">Cerrar Sesión</a>
+            <a href="index.php" class="Main-link">Ir al Sistema</a> |
+            <a href="logout.php" class="logout-link">Cerrar Sesión</a>
         </div>
     </div>
 
