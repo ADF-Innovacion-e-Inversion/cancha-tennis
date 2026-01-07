@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         body {
-            background-color: #f5f5f5;
+            background-color: #f4e1c3;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -66,7 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         .info-box {
             flex: 1;
-            background: linear-gradient(rgba(20, 192, 140, 0.6),rgba(16, 136, 90, 0.8));
+            background: linear-gradient(rgba(20, 192, 140, 0.6),rgba(16, 136, 90, 0.8)); 
+            background-color: #f5f5f5;
             color: white;
             padding: 40px;
             display: flex;
@@ -190,6 +191,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             margin-top: 20px;   /* ajusta el valor a gusto */
             text-align: center;
         }
+
+        .register-link:hover{
+            opacity: 0.5;
+        }
+
+        .register-link a {
+            color: #1d6cd2ff
+        }
+
+        .register-link a:visited {
+            color: #1d6cd2ff
+        }
+
     </style>
 </head>
 <body>
@@ -232,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </form>
 
             <div class="register-link">
-                <a href="register.php">¿No tienes cuenta? Crea una aquí</a>
+                <a href="register.php">¿No tienes una cuenta? Crea una aquí</a>
             </div>
         </div>
     </div>
