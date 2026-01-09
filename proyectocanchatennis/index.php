@@ -35,54 +35,109 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
     $cancha_id = $_POST['cancha_id'];
     $hora = $_POST['hora'];
     
-    // Validación: mínimo 3 días
-    $hoy = new DateTime();           // Fecha actual
-    $fechaCancha = new DateTime($fecha);
-    $fechaMinima = (clone $hoy)->modify('+3 days');
+    /*
+    1️⃣ Validación: máximo 3 reservas por semana
+    */
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as total
+        FROM reservas
+        WHERE usuario_id = ?
+        AND estado = 'confirmada'
+        AND YEARWEEK(fecha_reserva, 1) = YEARWEEK(CURDATE(), 1)
+    ");
+    $stmt->execute([$_SESSION['user_id']]);
+    $totalSemana = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-    if ($fechaCancha < $fechaMinima) {
-        $error = "Las reservas deben realizarse con al menos 3 días de anticipación.";
+    if ($totalSemana >= 3) {
+        $error = "Ya alcanzaste el máximo de 3 reservas activas esta semana.";
     } else {
 
-        // Validación: 1 reserva cada 24 hrs
-        $stmt = $pdo->prepare("
-            SELECT fecha_reserva
-            FROM reservas
-            WHERE usuario_id = ?
-            AND estado = 'confirmada'
-            ORDER BY fecha_reserva DESC
-            LIMIT 1
-        ");
-        $stmt->execute([$_SESSION['user_id']]);
-        $ultimaReserva = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Validación: mínimo 3 días de anticipación (solo por día, sin hora)
+        $hoy = new DateTime('today');                 // hoy a las 00:00
+        $fechaCancha = new DateTime($fecha);          // fecha seleccionada (00:00)
+        $fechaMinima = (clone $hoy)->modify('+3 days');
 
-        if ($ultimaReserva) {
-            $fechaUltima = new DateTime($ultimaReserva['fecha_reserva']);
-            $proximaPermitida = (clone $fechaUltima)->modify('+24 hours');
+        if ($fechaCancha < $fechaMinima) {
+            $fechaHabil = $fechaMinima->format("d/m/Y");
 
-            if (new DateTime() < $proximaPermitida) {
-                $error = "Solo puedes realizar una reserva cada 24 horas.";
-            }
+            $error = "Las reservas deben realizarse con al menos 3 días de anticipación. "
+                . "Podrás reservar a partir del {$fechaHabil}.";
         } else {
-            // Verificar si la cancha está disponible
-            $stmt = $pdo->prepare("SELECT id FROM reservas WHERE cancha_id = ? AND fecha = ? AND hora = ? AND estado = 'confirmada'");
-            $stmt->execute([$cancha_id, $fecha, $hora]);
-            
-            if ($stmt->rowCount() == 0) {
-                $stmt = $pdo->prepare("INSERT INTO reservas (usuario_id, cancha_id, fecha, hora) VALUES (?, ?, ?, ?)");
-                if ($stmt->execute([$_SESSION['user_id'], $cancha_id, $fecha, $hora])) {
-                    header("Location: index.php?fecha=$fecha&success=1");
-                    exit();
+
+            // Validación: 1 reserva cada 24 hrs
+            $stmt = $pdo->prepare("
+                SELECT fecha_reserva
+                FROM reservas
+                WHERE usuario_id = ?
+                AND estado = 'confirmada'
+                ORDER BY fecha_reserva DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$_SESSION['user_id']]);
+            $ultimaReserva = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($ultimaReserva) {
+                $fechaUltima = new DateTime($ultimaReserva['fecha_reserva']);
+                $proximaPermitida = (clone $fechaUltima)->modify('+24 hours');
+
+                if (new DateTime() < $proximaPermitida) {
+                    $ahora = new DateTime();
+                    $diff = $ahora->diff($proximaPermitida);
+
+                    $horasRestantes = ($diff->days * 24) + $diff->h;
+                    $minutosRestantes = $diff->i;
+
+                    $error = "Solo puedes realizar una reserva cada día. "
+                        . "Podrás reservar nuevamente en {$horasRestantes} horas y {$minutosRestantes} minutos.";
+                } else {
+                    // Verificar si la cancha está disponible
+                    $stmt = $pdo->prepare("SELECT id FROM reservas WHERE cancha_id = ? AND fecha = ? AND hora = ? AND estado = 'confirmada'");
+                    $stmt->execute([$cancha_id, $fecha, $hora]);
+                    
+                    if ($stmt->rowCount() == 0) {
+                        $stmt = $pdo->prepare("INSERT INTO reservas (usuario_id, cancha_id, fecha, hora) VALUES (?, ?, ?, ?)");
+                        if ($stmt->execute([$_SESSION['user_id'], $cancha_id, $fecha, $hora])) {
+                            header("Location: index.php?fecha=$fecha&success=1");
+                            exit();
+                        }
+                    } else {
+                        $error = "La cancha ya está reservada en ese horario";
+                    }
                 }
             } else {
-                $error = "La cancha ya está reservada en ese horario";
+                // Verificar si la cancha está disponible
+                    $stmt = $pdo->prepare("SELECT id FROM reservas WHERE cancha_id = ? AND fecha = ? AND hora = ? AND estado = 'confirmada'");
+                    $stmt->execute([$cancha_id, $fecha, $hora]);
+                    
+                    if ($stmt->rowCount() == 0) {
+                        $stmt = $pdo->prepare("INSERT INTO reservas (usuario_id, cancha_id, fecha, hora) VALUES (?, ?, ?, ?)");
+                        if ($stmt->execute([$_SESSION['user_id'], $cancha_id, $fecha, $hora])) {
+                            header("Location: index.php?fecha=$fecha&success=1");
+                            exit();
+                        }
+                    } else {
+                        $error = "La cancha ya está reservada en ese horario";
+                    }
             }
+
         }
-
     }
-
     
 }
+
+//Función para calcular las reservas disponibles para la semana
+$stmt = $pdo->prepare("
+    SELECT COUNT(*) as total
+    FROM reservas
+    WHERE usuario_id = ?
+    AND estado = 'confirmada'
+    AND YEARWEEK(fecha_reserva, 1) = YEARWEEK(CURDATE(), 1)
+");
+$stmt->execute([$_SESSION['user_id']]);
+$totalSemana = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+$reservasDisponibles = max(0, 3 - $totalSemana);
+
 ?>
 
 <!DOCTYPE html>
@@ -96,6 +151,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         /* .header h1 {text-shadow: 2px 5px 5px green}; */
         .filtro { margin-bottom: 20px; }
+        .disponibilidad-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .reservas-restantes {
+            font-size: 17px;
+            font-weight: bold;
+        }
         table { width: 100%; border-collapse: collapse; background-color: #f5f5f5;}
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background: #f8f9fa; }
@@ -179,7 +243,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
         </form>
     </div>
 
-    <h3>Disponibilidad para: <?php echo date('d/m/Y', strtotime($fecha)); ?></h3>
+    <div class="disponibilidad-row">
+        <h3>
+            Disponibilidad para: <?php echo date('d/m/Y', strtotime($fecha)); ?>
+        </h3>
+
+        <div class="reservas-restantes">
+            <?php echo $reservasDisponibles; ?>  Reservas disponibles esta semana
+        </div>
+    </div>
     
     <table>
         <thead>

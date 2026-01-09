@@ -163,6 +163,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .login-link a:visited {
             color: #1d6cd2ff
         }
+        .info-password {
+            margin: 15px 0;
+            padding: 10px 12px;
+            background-color: #eef4ff;
+            border-left: 4px solid #1d6cd2ff;
+            color: #333;
+            font-size: 14px;
+            border-radius: 5px;
+        }
 
     </style>
 </head>
@@ -176,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <form method="POST">
             <div class="form-group">
-                <label>Nombre usuario:</label>
+                <label>Usuario (RUT):</label>
                 <input type="text" name="nombre" required placeholder="Ej: 12345678-9">
             </div>
             
@@ -185,6 +194,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <input type="email" name="email" required placeholder="Ej: usuario@gmail.com">
             </div>
             
+            <div class="info-password">
+                La contraseña temporal será los últimos 4 dígitos de tu RUT,
+                sin considerar el dígito verificador.
+            </div>
+
             <button type="submit">Registrarse</button>
         </form>
 

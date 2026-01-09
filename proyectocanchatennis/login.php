@@ -203,7 +203,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .register-link a:visited {
             color: #1d6cd2ff
         }
-
+        .info-password {
+            margin: 15px 0;
+            padding: 10px 12px;
+            background-color: #eef4ff;
+            border-left: 4px solid #1d6cd2ff;
+            color: #333;
+            font-size: 14px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -236,12 +244,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <form method="POST" action="login.php">
                 <div class="form-group">
                     <label for="login-nombre">Usuario (RUT)</label>
-                    <input type="text" id="login-nombre" name="nombre" placeholder="12345678-9" required>
+                    <input type="text" id="login-nombre" name="nombre" placeholder="Ej: 12345678-9" required>
                 </div>
                 <div class="form-group">
                     <label for="login-password">Contraseña</label>
                     <input type="password" id="login-password" name="password" placeholder="Ingresa tu contraseña" required maxlength="50">
                 </div>
+
+                <div class="info-password">
+                    Por seguridad, en tu primer inicio de sesión se te pedirá cambiar la contraseña temporal por una contraseña propia.
+                </div>
+
                 <button type="submit" class="btn">Iniciar Sesión</button>
             </form>
 
