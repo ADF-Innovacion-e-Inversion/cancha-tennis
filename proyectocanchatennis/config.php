@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+date_default_timezone_set("America/Santiago"); //Esto es para que concorden las zonas horarias
 // Configuración de la base de datos
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
