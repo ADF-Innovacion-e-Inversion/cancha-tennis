@@ -30,13 +30,16 @@ foreach ($reservas as $reserva) {
 $canchas = $pdo->query("SELECT * FROM canchas")->fetchAll(PDO::FETCH_ASSOC);
 $horas = getHorasDisponibles();
 
-// Procesar nueva reserva
+
+
+// Procesar nueva reserva al presionar el botón
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
     $cancha_id = $_POST['cancha_id'];
     $hora = $_POST['hora'];
     
+    
     /*
-    1️⃣ Validación: máximo 3 reservas por semana
+    Validación: máximo 3 reservas por semana
     */
     $stmt = $pdo->prepare("
         SELECT COUNT(*) as total
@@ -50,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
 
     if ($totalSemana >= 3) {
         $error = "Ya alcanzaste el máximo de 3 reservas activas esta semana.";
+        
     } else {
 
         // Validación: mínimo 3 días de anticipación (solo por día, sin hora)
@@ -59,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
 
         if ($fechaCancha < $fechaMinima) {
             $fechaHabil = $fechaMinima->format("d/m/Y");
+            
 
             $error = "Las reservas deben realizarse con al menos 3 días de anticipación. "
                 . "Podrás reservar a partir del {$fechaHabil}.";
@@ -211,10 +216,71 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
             border-radius: 5px;
             border: 1px solid #ccc;
         }
+
+        .ventana-flotante {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .ventana-flotante-contenido {
+            background: #ffffff;
+            padding: 25px 30px;
+            border-radius: 10px;
+            width: 360px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+
+        .ventana-flotante-contenido h3 {
+            margin-bottom: 10px;
+        }
+
+        .ventana-flotante-contenido p {
+            margin-bottom: 20px;
+            font-size: 15px;
+        }
+
+        .ventana-flotante-acciones {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn-confirmar {
+            background: #28a745;
+            color: #ffffff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-cancelar {
+            background: #dc3545;
+            color: #ffffff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-confirmar:hover,
+        .btn-cancelar:hover {
+            opacity: 0.85;
+        }
+
         .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
         .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
     </style>
 </head>
+
+
 <body>
     <div class="header">
         <h1>Sistema de Reserva de Canchas</h1>
@@ -280,7 +346,9 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
                                 <form method="POST" style="margin: 0;">
                                     <input type="hidden" name="cancha_id" value="<?php echo $cancha['id']; ?>">
                                     <input type="hidden" name="hora" value="<?php echo $hora["inicio"]; //Se utiliza la hora de inicio para reservar los bloques ?>">
-                                    <button type="submit" name="reservar" class="reservar-btn">Reservar</button>
+                                    <input type="hidden" name="reservar" value="1"> 
+                                    <button type="button"  class="reservar-btn" onclick="abrirVentanaFlotante(this)">Reservar</button> <!-- Se configura el boton de reservar para que active la ventana flotante -->
+                                    
                                 </form>
                             <?php else: ?>
                                 No Disponible
@@ -296,5 +364,40 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
         <h3>Mis Reservas</h3>
         <a href="mis_reservas.php" class="reservation-link">Ver mis reservas activas</a>
     </div>
+
+<!-- Ventana flotante de confirmación -->
+<div id="ventanaFlotante" class="ventana-flotante">
+    <div class="ventana-flotante-contenido">
+        <h3>Confirmar reserva</h3>
+        <p>¿Estás seguro de que deseas realizar esta reserva?</p>
+
+        <div class="ventana-flotante-acciones">
+            <button id="btnConfirmarReserva" class="btn-confirmar">Sí, reservar</button>
+            <button id="btnCancelarReserva" class="btn-cancelar">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let formularioSeleccionado = null;
+
+//Aca se define la funcion javascript para la condiguración de la ventana flotante de confirmación
+function abrirVentanaFlotante(boton) {
+    formularioSeleccionado = boton.closest("form");
+    document.getElementById("ventanaFlotante").style.display = "flex";
+}
+
+document.getElementById("btnCancelarReserva").addEventListener("click", () => {
+    document.getElementById("ventanaFlotante").style.display = "none";
+    formularioSeleccionado = null;
+});
+
+document.getElementById("btnConfirmarReserva").addEventListener("click", () => {
+    if (formularioSeleccionado) {
+        formularioSeleccionado.submit();
+    }
+});
+</script>
+
 </body>
 </html>

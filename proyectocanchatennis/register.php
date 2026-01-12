@@ -147,22 +147,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         .error { color: red; margin-bottom: 15px; }
 
-        .login-link { 
-            text-align: center; 
-            margin-top: 20px;
-        }
-
-        .login-link:hover {
-            opacity: 0.5;
-        } 
-
-        .login-link a {
-            color: #1d6cd2ff
-        }
-
-        .login-link a:visited {
-            color: #1d6cd2ff
-        }
         .info-password {
             margin: 15px 0;
             padding: 10px 12px;
@@ -195,16 +179,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
             
             <div class="info-password">
-                La contraseña temporal será los últimos 4 dígitos de tu RUT,
+                La contraseña temporal será los últimos 4 dígitos del RUT,
                 sin considerar el dígito verificador.
             </div>
 
-            <button type="submit">Registrarse</button>
+            <button type="submit">Registrar</button>
         </form>
 
-        <div class="login-link">
-            <a href="login.php">¿Ya tienes una cuenta? Inicia sesión aquí</a>
-        </div>
     </div>
 </body>
 </html>

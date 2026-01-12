@@ -76,6 +76,14 @@ $reservas = $pdo->query("
         .Bienvenida {
             font-size: 18px;
         }
+        .Register-link:hover{opacity: 0.5;}
+        .Register-link {
+            color: #1d6cd2ff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .Register-link:visited {color: #1d6cd2ff;}
+
     </style>
 </head>
 <body>
@@ -84,6 +92,7 @@ $reservas = $pdo->query("
         <div class="Bienvenida">
             Bienvenido, <?php echo $_SESSION['user_name']; ?> | 
             <a href="index.php" class="Main-link">Ir al Sistema</a> |
+            <a href="register.php" class="Register-link">Registrar</a> |
             <a href="logout.php" class="logout-link">Cerrar Sesión</a>
         </div>
     </div>
