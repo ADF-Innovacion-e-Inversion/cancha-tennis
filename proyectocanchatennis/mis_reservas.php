@@ -44,13 +44,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
         .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
         .btn { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; text-decoration: none; display: inline-block; }
         .btn-danger { background: #dc3545; color: white; }
-        .logout-link:hover{opacity: 0.5;}
-        .logout-link {
-            color: #1d6cd2ff;
-            font-size: 18px;
-            font-weight: bold;
+        
+        .logo-link {
+            display: flex;
+            align-items: center;
         }
-        .logout-link:visited {color: #1d6cd2ff;}
+
+        .logo-img {
+            height: 90px;        /* tamaño ideal header */
+            width: auto;
+            max-width: 260px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .logo-img {
+                height: 40px;    /* un poco más chico en celular */
+            }
+        }
         .Main-link:hover{opacity: 0.5;}
         .Main-link {
             color: #1d6cd2ff;
@@ -62,14 +73,89 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
             font-size: 20px;
             font-weight: bold;
         }
+
+        .nav-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hamburger {
+            display: none;
+            font-size: 26px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Botón cerrar sesión */
+        .logout-btn:hover { opacity: 0.5; }
+        .logout-btn {
+            background-color: #dc3545;
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* --- MODO CELULAR --- */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 40px;
+                right: 0;
+                background: #fbeedbff;
+                border: 1px solid #d1bfa7;
+                border-radius: 8px;
+                padding: 12px;
+                flex-direction: column;
+                gap: 10px;
+                z-index: 1000;
+            }
+
+            .nav-menu.show {
+                display: flex;
+            }
+
+            .hamburger {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Mis Reservas</h1>
-        <div>
-            <a href="index.php" class="Main-link">Volver al Sistema</a> |
-            <a href="logout.php" class="logout-link">Cerrar Sesión</a>
+        <a href="index.php" class="logo-link">
+            <img src="teniscanchalogo.png" alt="Mis Reservas" class="logo-img">
+        </a>
+
+        <div class="nav-container">
+            <span class="Bienvenida">
+                Bienvenido, <?php echo $_SESSION['user_name']; ?>
+            </span>
+
+            <!-- Botón hamburguesa -->
+            <button class="hamburger" onclick="toggleMenu()">☰</button>
+
+            <!-- Menú -->
+            <div id="navMenu" class="nav-menu">
+                <a href="index.php" class="Main-link">Volver al Sistema</a>
+
+                <form action="logout.php" method="post">
+                    <button type="submit" class="logout-btn">Cerrar Sesión</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -120,5 +206,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
     <?php else: ?>
         <p class="vacio">No tienes reservas activas.</p>
     <?php endif; ?>
+
+
+<script>//Funcion para abrir el menú de hamburguesa
+function toggleMenu() {
+    document.getElementById("navMenu").classList.toggle("show");
+}
+</script>    
 </body>
 </html>

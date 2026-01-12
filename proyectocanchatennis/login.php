@@ -58,7 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         .container {
             display: flex;
-            width: 900px;
+            width: 100%;
+            max-width: 900px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             overflow: hidden;
@@ -211,6 +212,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             color: #333;
             font-size: 14px;
             border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px;
+            }
+
+            .container {
+                flex-direction: column;
+                width: 100%;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            .info-box {
+                display: none; /* igual que en la vista buena */
+            }
+
+            .login-box {
+                padding: 25px;
+            }
+
+            .login-box h2 {
+                font-size: 24px;
+            }
         }
     </style>
 </head>

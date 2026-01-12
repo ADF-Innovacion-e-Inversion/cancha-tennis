@@ -162,8 +162,11 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
             align-items: center;
         }
         .reservas-restantes {
+            border: 2px solid #d1bfa7;   /* borde suave */
             font-size: 17px;
             font-weight: bold;
+            padding: 10px 14px;         /* ← espacio interno */
+            border-radius: 8px;         /* opcional, se ve mejor */
         }
         table { width: 100%; border-collapse: collapse; background-color: #f5f5f5;}
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
@@ -172,6 +175,25 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
         .ocupada { background: #f8d7da; }
         .reservar-btn { padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
         .reservar-btn:hover { background: #0056b3; }
+        
+        .logo-link {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-img {
+            height: 90px;        /* tamaño ideal header */
+            width: auto;
+            max-width: 260px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .logo-img {
+                height: 40px;    /* un poco más chico en celular */
+            }
+        }
+        
         .reservation-link { margin-top: 20px; }
         .reservation-link:hover{opacity: 0.5;}
         .reservation-link {
@@ -180,13 +202,18 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
             font-weight: bold;
         }
         .reservation-link:visited {color: #1d6cd2ff}
-        .logout-link:hover{opacity: 0.5;}
-        .logout-link {
-            color: #1d6cd2ff;
-            font-size: 18px;
+        .logout-btn:hover{opacity: 0.5;}
+        .logout-btn {
+            background-color: #dc3545;   /* rojo */
+            color: #ffffff;              /* texto blanco */
+            border: none;
+            padding: 8px 14px;
+            font-size: 15px;
             font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
         }
-        .logout-link:visited {color: #1d6cd2ff;}
+  
         .Admin-link:hover{opacity: 0.5;}
         .Admin-link {
             color: #1d6cd2ff; 
@@ -277,19 +304,81 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
 
         .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
         .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
+
+        .nav-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hamburger {
+            display: none;
+            font-size: 26px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* --- MODO CELULAR --- */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 40px;
+                right: 0;
+                background: #fbeedbff;
+                border: 1px solid #d1bfa7;
+                border-radius: 8px;
+                padding: 12px;
+                flex-direction: column;
+                gap: 10px;
+                z-index: 1000;
+            }
+
+            .nav-menu.show {
+                display: flex;
+            }
+
+            .hamburger {
+                display: block;
+            }
+        }
+
     </style>
 </head>
 
 
 <body>
     <div class="header">
-        <h1>Sistema de Reserva de Canchas</h1>
-        <div class="Bienvenida">
-            Bienvenido, <?php echo $_SESSION['user_name']; ?> | 
-            <?php if (isAdmin()): ?>
-                <a href="admin.php" class="Admin-link">Administración</a> |
-            <?php endif; ?>
-            <a href="logout.php" class="logout-link">Cerrar Sesión</a>
+        <a href="index.php" class="logo-link">
+            <img src="teniscanchalogo.png" alt="Sistema de Reserva de Canchas" class="logo-img">
+        </a>
+
+        <div class="nav-container">
+            <span class="Bienvenida">
+                Bienvenido, <?php echo $_SESSION['user_name']; ?>
+            </span>
+
+            <!-- Botón hamburguesa -->
+            <button class="hamburger" onclick="toggleMenu()">☰</button>
+
+            <!-- Menú -->
+            <div id="navMenu" class="nav-menu">
+                <?php if (isAdmin()): ?>
+                    <a href="admin.php" class="Admin-link">Administración</a>
+                <?php endif; ?>
+
+                <form action="logout.php" method="post">
+                    <button type="submit" class="logout-btn">Cerrar Sesión</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -399,5 +488,10 @@ document.getElementById("btnConfirmarReserva").addEventListener("click", () => {
 });
 </script>
 
+<script> //Funcion para abrir el menú de hamburguesa
+function toggleMenu() {
+    document.getElementById("navMenu").classList.toggle("show");
+}
+</script>
 </body>
 </html>

@@ -59,13 +59,29 @@ $reservas = $pdo->query("
         .btn { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; text-decoration: none; display: inline-block; }
         .btn-danger { background: #dc3545; color: white; }
         .btn-primary { background: #007bff; color: white; }
-        .logout-link:hover{opacity: 0.5;}
-        .logout-link {
-            color: #1d6cd2ff;
-            font-size: 18px;
-            font-weight: bold;
+        
+        .logo-link {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
         }
-        .logout-link:visited {color: #1d6cd2ff;}
+
+        .logo-img {
+            height: 90px;       /* tamaño PC */
+            width: auto;
+            max-width: 260px;
+        }
+        .logout-btn:hover{opacity: 0.5;}
+        .logout-btn {
+            background-color: #dc3545;   /* rojo */
+            color: #ffffff;              /* texto blanco */
+            border: none;
+            padding: 8px 14px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
         .Main-link:hover{opacity: 0.5;}
         .Main-link {
             color: #1d6cd2ff;
@@ -84,17 +100,87 @@ $reservas = $pdo->query("
         }
         .Register-link:visited {color: #1d6cd2ff;}
 
+        .nav-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        /* Menú normal */
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Botón hamburguesa oculto en desktop */
+        .hamburger {
+            display: none;
+            font-size: 26px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* --- MODO CELULAR --- */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 40px;
+                right: 0;
+                background: #fbeedbff;
+                border: 1px solid #d1bfa7;
+                border-radius: 8px;
+                padding: 12px;
+                flex-direction: column;
+                gap: 10px;
+                z-index: 1000;
+            }
+
+            .nav-menu.show {
+                display: flex;
+            }
+
+            .hamburger {
+                display: block;
+            }
+        }
+
+        /* --- MODO CELULAR --- */
+        @media (max-width: 768px) {
+            .logo-img {
+                height: 40px;   /* tamaño celular */
+                max-width: 180px;
+            }
+        }
+
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Panel de Administración</h1>
-        <div class="Bienvenida">
-            Bienvenido, <?php echo $_SESSION['user_name']; ?> | 
-            <a href="index.php" class="Main-link">Ir al Sistema</a> |
-            <a href="register.php" class="Register-link">Registrar</a> |
-            <a href="logout.php" class="logout-link">Cerrar Sesión</a>
+        <a href="index.php" class="logo-link">
+            <img src="teniscanchalogo.png" alt="Panel de Administración" class="logo-img">
+        </a>
+        <div class="nav-container">
+        <span class="Bienvenida-texto">
+            Bienvenido, <?php echo $_SESSION['user_name']; ?>
+        </span>
+
+        <!-- Botón hamburguesa -->
+        <button class="hamburger" onclick="toggleMenu()">☰</button>
+
+        <!-- Menú -->
+        <div id="navMenu" class="nav-menu">
+            <a href="index.php" class="Main-link">Ir al Sistema</a>
+            <a href="register.php" class="Register-link">Registrar</a>
+
+            <form action="logout.php" method="post">
+                <button type="submit" class="logout-btn">Cerrar Sesión</button>
+            </form>
         </div>
+</div>
     </div>
 
     <?php if (isset($_GET['success'])): ?>
@@ -186,5 +272,12 @@ $reservas = $pdo->query("
             </tbody>
         </table>
     </div>
+
+<script>
+function toggleMenu() {
+    document.getElementById("navMenu").classList.toggle("show");
+}
+</script>
+
 </body>
 </html>
