@@ -131,6 +131,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         .login-link { text-align: center; margin-top: 20px; }
 
+        .info-password {
+            margin: 15px 0;
+            padding: 10px 12px;
+            background-color: #eef4ff;
+            border-left: 4px solid #1d6cd2ff;
+            color: #333;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+
     </style>
 </head>
 <body>
@@ -150,6 +160,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="form-group">
                 <label>Confirmar Contraseña:</label>
                 <input type="password" name="confirm_password" required>
+            </div>
+
+            <div class="info-password">
+                Por seguridad, en tu primer inicio de sesión se te pedirá cambiar la contraseña temporal por una contraseña propia.
             </div>
 
             <button type="submit">Cambiar Contraseña</button>

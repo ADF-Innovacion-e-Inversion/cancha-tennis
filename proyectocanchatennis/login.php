@@ -2,12 +2,12 @@
 include 'config.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $nombre = trim($_POST['nombre']); // Ahora se loguean con el RUT
+    $rut = trim($_POST['rut']); // Ahora se loguean con el RUT
     $password = trim($_POST['password']);
     
-    $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE nombre = ?");
-    $stmt->execute([$nombre]);
-    $user = $stmt->fetch();
+    $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE rut = ?");
+    $stmt->execute([$rut]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($user && password_verify($password, $user['password'])) {
         $_SESSION['user_id'] = $user['id'];
@@ -188,22 +188,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         }
 
-        .register-link {
-            margin-top: 20px;   /* ajusta el valor a gusto */
-            text-align: center;
-        }
-
-        .register-link:hover{
-            opacity: 0.5;
-        }
-
-        .register-link a {
-            color: #1d6cd2ff
-        }
-
-        .register-link a:visited {
-            color: #1d6cd2ff
-        }
         .info-password {
             margin: 15px 0;
             padding: 10px 12px;
@@ -269,8 +253,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             <form method="POST" action="login.php">
                 <div class="form-group">
-                    <label for="login-nombre">Usuario (RUT)</label>
-                    <input type="text" id="login-nombre" name="nombre" placeholder="Ej: 12345678-9" required>
+                    <label for="login-rut">RUT</label>
+                    <input 
+                        type="text"
+                        id="login-rut"
+                        name="rut"
+                        placeholder="Ingrese su RUT sin puntos ni guión"
+                        required
+                    >
                 </div>
                 <div class="form-group">
                     <label for="login-password">Contraseña</label>
@@ -278,17 +268,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
 
                 <div class="info-password">
-                    Por seguridad, en tu primer inicio de sesión se te pedirá cambiar la contraseña temporal por una contraseña propia.
+                    La contraseña temporal será los últimos 4 dígitos del RUT,
+                    sin considerar el dígito verificador.
                 </div>
 
                 <button type="submit" class="btn">Iniciar Sesión</button>
             </form>
 
-            <div class="register-link">
-                <a href="register.php">¿No tienes una cuenta? Crea una aquí</a>
-            </div>
         </div>
     </div>
+
+<script>
+const rutInput = document.getElementById("login-rut");
+
+rutInput.addEventListener("input", () => {
+    let valor = rutInput.value;
+
+    // Eliminar todo excepto números y k/K
+    valor = valor.replace(/[^0-9kK]/g, "");
+
+    // Si hay más de 1 carácter, agregar guión antes del último
+    if (valor.length > 1) {
+        const cuerpo = valor.slice(0, -1);
+        const dv = valor.slice(-1);
+        rutInput.value = cuerpo + "-" + dv;
+    } else {
+        rutInput.value = valor;
+    }
+});
+</script>
 </body>
 <!-- <head>
     <link rel="stylesheet" href="carpetacss/login.css">
