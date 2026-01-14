@@ -6,6 +6,11 @@ if (!isLoggedIn()) {
     exit();
 }
 
+// 🔹 Obtener plan del usuario
+$stmt = $pdo->prepare("SELECT plan FROM usuarios WHERE id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$planUsuario = $stmt->fetchColumn(); // 'Individual' o 'Familiar'
+
 // Procesar filtro de fecha
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 
@@ -69,46 +74,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
                 . "Podrás reservar a partir del {$fechaHabil}.";
         } else {
 
-            // Validación: 1 reserva cada 24 hrs
+            // 🔐 Validación por plan (24 horas)
+            $limiteDiario = ($planUsuario === 'Familiar') ? 3 : 1;
+
             $stmt = $pdo->prepare("
-                SELECT fecha_reserva
+                SELECT COUNT(*) 
                 FROM reservas
                 WHERE usuario_id = ?
                 AND estado = 'confirmada'
-                ORDER BY fecha_reserva DESC
-                LIMIT 1
+                AND fecha_reserva >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
             ");
             $stmt->execute([$_SESSION['user_id']]);
-            $ultimaReserva = $stmt->fetch(PDO::FETCH_ASSOC);
+            $reservasUltimas24h = (int)$stmt->fetchColumn();
 
-            if ($ultimaReserva) {
-                $fechaUltima = new DateTime($ultimaReserva['fecha_reserva']);
-                $proximaPermitida = (clone $fechaUltima)->modify('+24 hours');
+            if ($reservasUltimas24h >= $limiteDiario) {
 
-                if (new DateTime() < $proximaPermitida) {
-                    $ahora = new DateTime();
-                    $diff = $ahora->diff($proximaPermitida);
+                // Obtener la ÚLTIMA reserva realizada
+                $stmt = $pdo->prepare("
+                    SELECT fecha_reserva
+                    FROM reservas
+                    WHERE usuario_id = ?
+                    AND estado = 'confirmada'
+                    ORDER BY fecha_reserva DESC
+                    LIMIT 1
+                ");
+                $stmt->execute([$_SESSION['user_id']]);
+                $fechaUltima = new DateTime($stmt->fetchColumn());
 
-                    $horasRestantes = ($diff->days * 24) + $diff->h;
-                    $minutosRestantes = $diff->i;
+                $proximaDisponible = (clone $fechaUltima)->modify('+24 hours');
+                $ahora = new DateTime();
 
-                    $error = "Solo puedes realizar una reserva cada día. "
+                $diff = $ahora->diff($proximaDisponible);
+                $horasRestantes = ($diff->days * 24) + $diff->h;
+                $minutosRestantes = $diff->i;
+
+                if ($planUsuario === 'Familiar') {
+                    $error = "Tu plan Familiar permite hasta 3 reservas cada 24 horas. "
                         . "Podrás reservar nuevamente en {$horasRestantes} horas y {$minutosRestantes} minutos.";
                 } else {
-                    // Verificar si la cancha está disponible
-                    $stmt = $pdo->prepare("SELECT id FROM reservas WHERE cancha_id = ? AND fecha = ? AND hora = ? AND estado = 'confirmada'");
-                    $stmt->execute([$cancha_id, $fecha, $hora]);
-                    
-                    if ($stmt->rowCount() == 0) {
-                        $stmt = $pdo->prepare("INSERT INTO reservas (usuario_id, cancha_id, fecha, hora) VALUES (?, ?, ?, ?)");
-                        if ($stmt->execute([$_SESSION['user_id'], $cancha_id, $fecha, $hora])) {
-                            header("Location: index.php?fecha=$fecha&success=1");
-                            exit();
-                        }
-                    } else {
-                        $error = "La cancha ya está reservada en ese horario";
-                    }
+                    $error = "Tu plan Individual permite solo 1 reserva cada 24 horas. "
+                        . "Podrás reservar nuevamente en {$horasRestantes} horas y {$minutosRestantes} minutos.";
                 }
+
             } else {
                 // Verificar si la cancha está disponible
                     $stmt = $pdo->prepare("SELECT id FROM reservas WHERE cancha_id = ? AND fecha = ? AND hora = ? AND estado = 'confirmada'");
