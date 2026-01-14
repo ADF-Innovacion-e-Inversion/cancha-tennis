@@ -49,8 +49,8 @@ $reservas = $pdo->query("
     <title>Panel de Administración</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #fbeedbff;}
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .section { margin-bottom: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; width: 100%;}
+        .section { margin-bottom: 30px; width: 100%; overflow-x: auto;}
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f5f5f5;}
         th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         th { background: #f8f9fa; }
@@ -71,6 +71,37 @@ $reservas = $pdo->query("
             width: auto;
             max-width: 260px;
         }
+
+        .btn-sistema {
+            background-color: #007bff;   /* azul */
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-sistema:hover {
+            opacity: 0.5;
+        }
+
+        .btn-registro {
+            background-color: #007bff;   /* azul */
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-registro:hover {
+            opacity: 0.5;
+        }
+
         .logout-btn:hover{opacity: 0.5;}
         .logout-btn {
             background-color: #dc3545;   /* rojo */
@@ -123,6 +154,22 @@ $reservas = $pdo->query("
             cursor: pointer;
         }
 
+        .Bienvenida-texto {
+            font-size: 14px;
+            max-width: 200px;       /* límite físico */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .form-inline {
+                display: flex;
+                flex-direction: column;
+                gap: 8px; /* ← espacio entre select y botón */
+            }
+        }
+
         /* --- MODO CELULAR --- */
         @media (max-width: 768px) {
             .nav-menu {
@@ -173,9 +220,16 @@ $reservas = $pdo->query("
 
         <!-- Menú -->
         <div id="navMenu" class="nav-menu">
-            <a href="index.php" class="Main-link">Ir al Sistema</a>
-            <a href="register.php" class="Register-link">Registrar</a>
-
+            <form action="index.php" method="get">
+                <button type="submit" class="btn-sistema">
+                    Ir al Sistema
+                </button>
+            </form>
+            <form action="register.php" method="get">
+                <button type="submit" class="btn-registro">
+                    Registrar
+                </button>
+            </form>
             <form action="logout.php" method="post">
                 <button type="submit" class="logout-btn">Cerrar Sesión</button>
             </form>

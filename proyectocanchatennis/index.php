@@ -11,6 +11,10 @@ $stmt = $pdo->prepare("SELECT plan FROM usuarios WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $planUsuario = $stmt->fetchColumn(); // 'Individual' o 'Familiar'
 
+// 🔐 Límites según plan
+$limiteSemanal = ($planUsuario === 'Familiar') ? 6 : 3;
+$limiteDiario  = ($planUsuario === 'Familiar') ? 3 : 1;
+
 // Procesar filtro de fecha
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 
@@ -46,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
     /*
     Validación: máximo 3 reservas por semana
     */
+
     $stmt = $pdo->prepare("
         SELECT COUNT(*) as total
         FROM reservas
@@ -54,11 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
         AND YEARWEEK(fecha_reserva, 1) = YEARWEEK(CURDATE(), 1)
     ");
     $stmt->execute([$_SESSION['user_id']]);
-    $totalSemana = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    $totalSemana = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-    if ($totalSemana >= 3) {
-        $error = "Ya alcanzaste el máximo de 3 reservas activas esta semana.";
-        
+    if ($totalSemana >= $limiteSemanal) {
+        if ($planUsuario === 'Familiar') {
+            $error = "Tu plan Familiar permite hasta 6 reservas activas por semana.";
+        } else {
+            $error = "Tu plan Individual permite hasta 3 reservas activas por semana.";
+        }
+
     } else {
 
         // Validación: mínimo 3 días de anticipación (solo por día, sin hora)
@@ -75,7 +84,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
         } else {
 
             // 🔐 Validación por plan (24 horas)
-            $limiteDiario = ($planUsuario === 'Familiar') ? 3 : 1;
 
             $stmt = $pdo->prepare("
                 SELECT COUNT(*) 
@@ -137,7 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
     
 }
 
-//Función para calcular las reservas disponibles para la semana
+// Función para calcular las reservas disponibles para la semana (según plan)
+
 $stmt = $pdo->prepare("
     SELECT COUNT(*) as total
     FROM reservas
@@ -148,7 +157,7 @@ $stmt = $pdo->prepare("
 $stmt->execute([$_SESSION['user_id']]);
 $totalSemana = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-$reservasDisponibles = max(0, 3 - $totalSemana);
+$reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
 
 ?>
 
@@ -164,15 +173,23 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
         /* .header h1 {text-shadow: 2px 5px 5px green}; */
         .filtro { margin-bottom: 20px; }
         .disponibilidad-row {
+            font-size: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+        .fecha-disponibilidad {
+            font-size: 15px;
+            font-weight: bold;
+            padding: 10px 10px;         /* ← espacio interno */
+            border-radius: 8px;         /* opcional, se ve mejor */
+        }
+
         .reservas-restantes {
             border: 2px solid #d1bfa7;   /* borde suave */
-            font-size: 17px;
+            font-size: 15px;
             font-weight: bold;
-            padding: 10px 14px;         /* ← espacio interno */
+            padding: 10px 10px;         /* ← espacio interno */
             border-radius: 8px;         /* opcional, se ve mejor */
         }
         table { width: 100%; border-collapse: collapse; background-color: #f5f5f5;}
@@ -220,6 +237,36 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
             border-radius: 6px;
             cursor: pointer;
         }
+
+        .btn-reserva {
+            background-color: #007bff;   /* azul */
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-reserva:hover {
+            opacity: 0.5;
+        }
+
+        .btn-admin {
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-admin:hover {
+            opacity: 0.5;
+        }
   
         .Admin-link:hover{opacity: 0.5;}
         .Admin-link {
@@ -232,7 +279,11 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
             font-size: 20px;
         }
         .Bienvenida {
-            font-size: 18px;
+            font-size: 14px;
+            max-width: 200px;       /* límite físico */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .Filtro {
             font-size: 18px;
@@ -378,9 +429,11 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
 
             <!-- Menú -->
             <div id="navMenu" class="nav-menu">
-                <?php if (isAdmin()): ?>
-                    <a href="admin.php" class="Admin-link">Administración</a>
-                <?php endif; ?>
+                <form action="admin.php" method="get">
+                    <button type="submit" class="btn-admin">
+                        Administración
+                    </button>
+                </form>
 
                 <form action="logout.php" method="post">
                     <button type="submit" class="logout-btn">Cerrar Sesión</button>
@@ -406,7 +459,7 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
     </div>
 
     <div class="disponibilidad-row">
-        <h3>
+        <h3 class="fecha-disponibilidad">
             Disponibilidad para: <?php echo date('d/m/Y', strtotime($fecha)); ?>
         </h3>
 
@@ -458,7 +511,12 @@ $reservasDisponibles = max(0, 3 - $totalSemana);
 
     <div class="nav-links">
         <h3>Mis Reservas</h3>
-        <a href="mis_reservas.php" class="reservation-link">Ver mis reservas activas</a>
+
+        <form action="mis_reservas.php" method="get">
+            <button type="submit" class="btn-reserva">
+                Ver mis reservas activas
+            </button>
+        </form>
     </div>
 
 <!-- Ventana flotante de confirmación -->

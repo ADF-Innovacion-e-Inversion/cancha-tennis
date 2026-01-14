@@ -247,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             <div class="form-group">
                 <label>RUT:</label>
-                <input type="text" name="rut" id="rut" required placeholder="Ingrese su RUT sin puntos ni guión">
+                <input type="text" name="rut" id="rut" required placeholder="Sin puntos ni guión">
             </div>
 
             <div class="form-group">

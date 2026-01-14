@@ -258,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         type="text"
                         id="login-rut"
                         name="rut"
-                        placeholder="Ingrese su RUT sin puntos ni guión"
+                        placeholder="Sin puntos ni guión"
                         required
                     >
                 </div>
