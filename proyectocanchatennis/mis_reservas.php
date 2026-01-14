@@ -36,10 +36,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Reservas</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #fbeedbff;}
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; width: 100%;}
+        body { font-family: Arial, sans-serif; margin: 0 auto;  background-color: #c2ffc2;}
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {width: 100%; background-color: #eeffee;}
+        .header-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 5px 5px; /* ← ESTE ES EL ESPACIO LATERAL */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
         table { width: 100%; border-collapse: collapse; background-color: #f5f5f5;}
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th, td { border: 1px solid #7f7f7f; padding: 10px; text-align: center; }
         th { background: #f8f9fa; }
         .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
         .btn { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; text-decoration: none; display: inline-block; }
@@ -78,7 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
         }
 
         .btn-volver:hover {
-            opacity: 0.5;
+            background-color: #86c1ff;
+            color: #000000;
         }
 
         .vacio {
@@ -108,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
         }
 
         /* Botón cerrar sesión */
-        .logout-btn:hover { opacity: 0.5; }
+        .logout-btn:hover {background-color: #ffacaa; color: #000000;}
         .logout-btn {
             background-color: #dc3545;
             color: #ffffff;
@@ -122,6 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
 
         .Bienvenida {
             font-size: 14px;
+            font-weight: bold;
             max-width: 200px;       /* límite físico */
             overflow: hidden;
             text-overflow: ellipsis;
@@ -135,8 +150,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
                 position: absolute;
                 top: 40px;
                 right: 0;
-                background: #fbeedbff;
-                border: 1px solid #d1bfa7;
+                background: #eeffee;
+                border: 1px solid #7dfe7d;
                 border-radius: 8px;
                 padding: 12px;
                 flex-direction: column;
@@ -156,84 +171,88 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
 </head>
 <body>
     <div class="header">
-        <a href="index.php" class="logo-link">
-            <img src="teniscanchalogo.png" alt="Mis Reservas" class="logo-img">
-        </a>
+        <div class="header-inner">
+            <a href="index.php" class="logo-link">
+                <img src="teniscanchalogo.png" alt="Mis Reservas" class="logo-img">
+            </a>
 
-        <div class="nav-container">
-            <span class="Bienvenida">
-                Bienvenido, <?php echo $_SESSION['user_name']; ?>
-            </span>
+            <div class="nav-container">
+                <span class="Bienvenida">
+                    Bienvenido, <?php echo $_SESSION['user_name']; ?>
+                </span>
 
-            <!-- Botón hamburguesa -->
-            <button class="hamburger" onclick="toggleMenu()">☰</button>
+                <!-- Botón hamburguesa -->
+                <button class="hamburger" onclick="toggleMenu()">☰</button>
 
-            <!-- Menú -->
-            <div id="navMenu" class="nav-menu">
-                <form action="index.php" method="get">
-                    <button type="submit" class="btn-volver">
-                        Volver
-                    </button>
-                </form>
+                <!-- Menú -->
+                <div id="navMenu" class="nav-menu">
+                    <form action="index.php" method="get">
+                        <button type="submit" class="btn-volver">Volver</button>
+                    </form>
 
-                <form action="logout.php" method="post">
-                    <button type="submit" class="logout-btn">Cerrar Sesión</button>
-                </form>
+                    <form action="logout.php" method="post">
+                        <button type="submit" class="logout-btn">Cerrar Sesión</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
-    <?php if (isset($_GET['success'])): ?>
-        <div class="success">Reserva cancelada correctamente</div>
-    <?php endif; ?>
+    <div class="container">
+        <?php if (isset($_GET['success'])): ?>
+            <div class="success">Reserva cancelada correctamente</div>
+        <?php endif; ?>
 
-    <?php if (count($reservas) > 0): ?>
-        <div class="section">
-        <h2>Mis Reservas Activas</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Cancha</th>
-                        <th>Fecha</th>
-                        <th>Hora</th>
-                        <th>Fecha de Reserva</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($reservas as $reserva): ?>
-                        <?php $bloque = obtenerBloqueHora($reserva["hora"]);    //Aca se usa una funcion helper para obtener la hora de inicio y de fin para mostrar al cliente ?>
+        <?php if (count($reservas) > 0): ?>
+            <div class="section">
+            <h2>Mis Reservas Activas</h2>
+                <table>
+                    <thead>
                         <tr>
-                            <td><?php echo $reserva['cancha_nombre']; ?></td>
-                            <td><?php echo date('d/m/Y', strtotime($reserva['fecha'])); ?></td>
-                            <td>
-                                <?php if ($bloque): ?>
-                                    <?php echo date("H:i", strtotime($bloque["inicio"])); ?>
-                                    -
-                                    <?php echo date("H:i", strtotime($bloque["fin"])); ?>
-                                <?php else: ?>
-                                    <?php echo date("H:i", strtotime($reserva["hora"])); ?>
-                                <?php endif; ?>
-                            </td>
-                            <td><?php echo date('d/m/Y H:i', strtotime($reserva['fecha_reserva'])); ?></td>
-                            <td>
-                                <form method="POST">
-                                    <input type="hidden" name="reserva_id" value="<?php echo $reserva['id']; ?>">
-                                    <button type="submit" name="cancelar_reserva" class="btn btn-danger" 
-                                            onclick="return confirm('¿Estás seguro de cancelar esta reserva?')">
-                                        Cancelar
-                                    </button>
-                                </form>
-                            </td>
+                            <th>Cancha</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Fecha de Reserva</th>
+                            <th>Acciones</th>
                         </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($reservas as $reserva): ?>
+                            <?php $bloque = obtenerBloqueHora($reserva["hora"]);    //Aca se usa una funcion helper para obtener la hora de inicio y de fin para mostrar al cliente ?>
+                            <tr>
+                                <td><?php echo $reserva['cancha_nombre']; ?></td>
+                                <td><?php echo date('d/m/Y', strtotime($reserva['fecha'])); ?></td>
+                                <td>
+                                    <?php if ($bloque): ?>
+                                        <?php echo date("H:i", strtotime($bloque["inicio"])); ?>
+                                        -
+                                        <?php echo date("H:i", strtotime($bloque["fin"])); ?>
+                                    <?php else: ?>
+                                        <?php echo date("H:i", strtotime($reserva["hora"])); ?>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?php echo date('d/m/Y H:i', strtotime($reserva['fecha_reserva'])); ?></td>
+                                <td>
+                                    <form method="POST">
+                                        <input type="hidden" name="reserva_id" value="<?php echo $reserva['id']; ?>">
+                                        <button type="submit" name="cancelar_reserva" class="btn btn-danger" 
+                                                onclick="return confirm('¿Estás seguro de cancelar esta reserva?')">
+                                            Cancelar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            
+        <?php else: ?>
+            <p class="vacio">No tienes reservas activas.</p>
+        <?php endif; ?>
         </div>
-        
-    <?php else: ?>
-        <p class="vacio">No tienes reservas activas.</p>
-    <?php endif; ?>
+
+    
 
 
 <script>//Funcion para abrir el menú de hamburguesa

@@ -85,15 +85,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             box-sizing: border-box;
             font-family: 'Arial', sans-serif;
         }
-        body { 
-            background-color: #f4e1c3;
-            max-width: 1200px; 
-            margin: 0 auto; 
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #c2ffc2;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
+
+            /* centra SOLO el formulario */
+            min-height: calc(100vh - 120px);
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;}
+        }
+
+        .header {
+            width: 100%;
+            background-color: #eeffee;
+        }
+
+        .header-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 5px 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-img {
+            height: 90px;
+            width: auto;
+            max-width: 260px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .logo-img {
+                height: 40px;
+            }
+        }
 
         .container-box {
             background-color: white;
@@ -172,19 +206,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         .error { color: red; margin-bottom: 15px; }
 
-        .logo-esquina {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            display: block;
-        }
-
-        .logo-esquina img {
-            height: 90px;      /* tamaño PC */
-            width: auto;
-            max-width: 220px;
-            cursor: pointer;
-        }
 
         .form-group select {
             width: 100%;
@@ -203,83 +224,77 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         /* --- MODO CELULAR --- */
-        @media (max-width: 768px) {
-            body {
-                padding-top: 80px; /* espacio para el logo */
-            }
-
-            .logo-esquina {
-                top: 12px;
-                left: 12px;
-            }
-
-            .logo-esquina img {
-                height: 42px;  /* más pequeño en móvil */
-                max-width: 160px;
-            }
-        }
+        
     </style>
 </head>
 <body>
 
-    <a href="index.php" class="logo-esquina">
-        <img src="teniscanchalogo.png" alt="Sistema de Canchas">
-    </a>
-
-    <div class="container-box">
-        <h2>Registro de Socio</h2>
-
-        <?php if (isset($error)): ?>
-            <div class="error"><?php echo $error; ?></div>
-        <?php endif; ?>
-
-        <form method="POST">
-
-            <div class="form-group">
-                <label>Nombre:</label>
-                <input type="text" name="nombre" required>
-            </div>
-
-            <div class="form-group">
-                <label>Apellido:</label>
-                <input type="text" name="apellido" required>
-            </div>
-
-            <div class="form-group">
-                <label>RUT:</label>
-                <input type="text" name="rut" id="rut" required placeholder="Sin puntos ni guión">
-            </div>
-
-            <div class="form-group">
-                <label>Email:</label>
-                <input type="email" name="email" required placeholder="Ej: usuario@gmail.com">
-            </div>
-
-            <div class="form-group">
-                <label>Teléfono:</label>
-                <input type="number" name="telefono" required placeholder="Ej: 9XXXXXXXX">
-            </div>
-
-            <div class="form-group">
-                <label>Tipo de Usuario:</label>
-                <select name="tipo" required>
-                    <option value="socio" selected>Socio</option>
-                    <option value="admin">Administrador</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Plan:</label>
-                <select name="plan" required>
-                    <option value="Individual" selected>Individual</option>
-                    <option value="Familiar">Familiar</option>
-                </select>
-            </div>
-
-            <button type="submit">Registrar</button>
-        </form>
-
+    <div class="header">
+        <div class="header-inner">
+            <a href="index.php">
+                <img src="teniscanchalogo.png" alt="Sistema de Canchas" class="logo-img">
+            </a>
+        </div>
     </div>
+
+    <div class="container">
+        <div class="container-box">
+            <h2>Registro de Socio</h2>
+
+            <?php if (isset($error)): ?>
+                <div class="error"><?php echo $error; ?></div>
+            <?php endif; ?>
+
+            <form method="POST">
+
+                <div class="form-group">
+                    <label>Nombre:</label>
+                    <input type="text" name="nombre" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Apellido:</label>
+                    <input type="text" name="apellido" required>
+                </div>
+
+                <div class="form-group">
+                    <label>RUT:</label>
+                    <input type="text" name="rut" id="rut" required placeholder="Sin puntos ni guión">
+                </div>
+
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" name="email" required placeholder="Ej: usuario@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Teléfono:</label>
+                    <input type="number" name="telefono" required placeholder="Ej: 9XXXXXXXX">
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de Usuario:</label>
+                    <select name="tipo" required>
+                        <option value="socio" selected>Socio</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Plan:</label>
+                    <select name="plan" required>
+                        <option value="Individual" selected>Individual</option>
+                        <option value="Familiar">Familiar</option>
+                    </select>
+                </div>
+
+                <button type="submit">Registrar</button>
+            </form>
+
+        </div>
+    </div>
+
+    
 
 
 <!-- Funcion para rellenar el guión automaticamente -->

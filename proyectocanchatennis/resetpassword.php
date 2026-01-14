@@ -44,12 +44,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-family: 'Arial', sans-serif;
         }
 
-        body { 
-            background-color: #f4e1c3;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #c2ffc2;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+
+            /* centra SOLO el formulario */
+            min-height: calc(100vh - 120px);
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;}
+        }
+
+        .header {
+            width: 100%;
+            background-color: #eeffee;
+        }
+
+        .header-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 5px 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-img {
+            height: 90px;
+            width: auto;
+            max-width: 260px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .logo-img {
+                height: 40px;
+            }
+        }
         
         .container-box {
             background-color: white;
@@ -144,30 +181,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </style>
 </head>
 <body>
-    <div class="container-box">
-        <h2>Reestablecer Contraseña</h2>
-
-        <?php if (isset($error)): ?>
-            <div class="error"><?php echo $error; ?></div>
-        <?php endif; ?>
-
-        <form method="POST">
-            <div class="form-group">
-                <label>Contraseña:</label>
-                <input type="password" name="password" required>
-            </div>
-
-            <div class="form-group">
-                <label>Confirmar Contraseña:</label>
-                <input type="password" name="confirm_password" required>
-            </div>
-
-            <div class="info-password">
-                Por seguridad, en tu primer inicio de sesión se te pedirá cambiar la contraseña temporal por una contraseña propia.
-            </div>
-
-            <button type="submit">Cambiar Contraseña</button>
-        </form>
+    <div class="header">
+        <div class="header-inner">
+            <a href="login.php">
+                <img src="teniscanchalogo.png" alt="Sistema de Canchas" class="logo-img">
+            </a>
+        </div>
     </div>
+
+    <div class="container">
+        <div class="container-box">
+            <h2>Reestablecer Contraseña</h2>
+
+            <?php if (isset($error)): ?>
+                <div class="error"><?php echo $error; ?></div>
+            <?php endif; ?>
+
+            <form method="POST">
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" name="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Confirmar Contraseña:</label>
+                    <input type="password" name="confirm_password" required>
+                </div>
+
+                <div class="info-password">
+                    Por seguridad, en tu primer inicio de sesión se te pedirá cambiar la contraseña temporal por una contraseña propia.
+                </div>
+
+                <button type="submit">Cambiar Contraseña</button>
+            </form>
+        </div>
+    </div>
+    
 </body>
 </html>

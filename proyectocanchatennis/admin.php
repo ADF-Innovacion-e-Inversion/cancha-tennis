@@ -48,18 +48,33 @@ $reservas = $pdo->query("
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #fbeedbff;}
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; width: 100%;}
+        body { font-family: Arial, sans-serif; margin: 0 auto;  background-color: #c2ffc2;}
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header { width: 100%; background-color: #eeffee;}
+        .header-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 5px 5px; /* ← ESTE ES EL ESPACIO LATERAL */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
         .section { margin-bottom: 30px; width: 100%; overflow-x: auto;}
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background-color: #f5f5f5;}
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th, td { border: 1px solid #7f7f7f; padding: 10px; text-align: center; }
         th { background: #f8f9fa; }
         .success { background: #d4edda; color: #155724; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
         .form-inline { display: inline; }
         .btn { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; text-decoration: none; display: inline-block; }
         .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover {opacity: 0.5;}
         .btn-primary { background: #007bff; color: white; }
-        
+        .btn-primary:hover {opacity: 0.5;}
+
         .logo-link {
             display: flex;
             align-items: center;
@@ -84,7 +99,8 @@ $reservas = $pdo->query("
         }
 
         .btn-sistema:hover {
-            opacity: 0.5;
+            background-color: #86c1ff;
+            color: #000000;
         }
 
         .btn-registro {
@@ -99,10 +115,11 @@ $reservas = $pdo->query("
         }
 
         .btn-registro:hover {
-            opacity: 0.5;
+            background-color: #86c1ff;
+            color: #000000;
         }
 
-        .logout-btn:hover{opacity: 0.5;}
+        .logout-btn:hover{background-color: #ffacaa; color: #000000;}
         .logout-btn {
             background-color: #dc3545;   /* rojo */
             color: #ffffff;              /* texto blanco */
@@ -113,23 +130,9 @@ $reservas = $pdo->query("
             border-radius: 6px;
             cursor: pointer;
         }
-        .Main-link:hover{opacity: 0.5;}
-        .Main-link {
-            color: #1d6cd2ff;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .Main-link:visited {color: #1d6cd2ff;}
         .Bienvenida {
             font-size: 18px;
         }
-        .Register-link:hover{opacity: 0.5;}
-        .Register-link {
-            color: #1d6cd2ff;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .Register-link:visited {color: #1d6cd2ff;}
 
         .nav-container {
             display: flex;
@@ -156,6 +159,7 @@ $reservas = $pdo->query("
 
         .Bienvenida-texto {
             font-size: 14px;
+            font-weight: bold;
             max-width: 200px;       /* límite físico */
             overflow: hidden;
             text-overflow: ellipsis;
@@ -177,8 +181,8 @@ $reservas = $pdo->query("
                 position: absolute;
                 top: 40px;
                 right: 0;
-                background: #fbeedbff;
-                border: 1px solid #d1bfa7;
+                background: #eeffee;
+                border: 1px solid #7dfe7d;
                 border-radius: 8px;
                 padding: 12px;
                 flex-direction: column;
@@ -207,125 +211,136 @@ $reservas = $pdo->query("
 </head>
 <body>
     <div class="header">
-        <a href="index.php" class="logo-link">
-            <img src="teniscanchalogo.png" alt="Panel de Administración" class="logo-img">
-        </a>
-        <div class="nav-container">
-        <span class="Bienvenida-texto">
-            Bienvenido, <?php echo $_SESSION['user_name']; ?>
-        </span>
+        <div class="header-inner">
 
-        <!-- Botón hamburguesa -->
-        <button class="hamburger" onclick="toggleMenu()">☰</button>
+            <a href="index.php" class="logo-link">
+                <img src="teniscanchalogo.png" alt="Panel de Administración" class="logo-img">
+            </a>
 
-        <!-- Menú -->
-        <div id="navMenu" class="nav-menu">
-            <form action="index.php" method="get">
-                <button type="submit" class="btn-sistema">
-                    Ir al Sistema
-                </button>
-            </form>
-            <form action="register.php" method="get">
-                <button type="submit" class="btn-registro">
-                    Registrar
-                </button>
-            </form>
-            <form action="logout.php" method="post">
-                <button type="submit" class="logout-btn">Cerrar Sesión</button>
-            </form>
+            <div class="nav-container">
+                <span class="Bienvenida-texto">
+                    Bienvenido, <?php echo $_SESSION['user_name']; ?>
+                </span>
+
+                <!-- Botón hamburguesa -->
+                <button class="hamburger" onclick="toggleMenu()">☰</button>
+
+                <!-- Menú -->
+                <div id="navMenu" class="nav-menu">
+                    <form action="index.php" method="get">
+                        <button type="submit" class="btn-sistema">
+                            Ir al Sistema
+                        </button>
+                    </form>
+                    <form action="register.php" method="get">
+                        <button type="submit" class="btn-registro">
+                            Registrar
+                        </button>
+                    </form>
+                    <form action="logout.php" method="post">
+                        <button type="submit" class="logout-btn">
+                            Cerrar Sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
+
         </div>
-</div>
     </div>
 
-    <?php if (isset($_GET['success'])): ?>
-        <div class="success">
-            <?php 
-            if ($_GET['success'] == 1) echo "Estado de cancha actualizado correctamente";
-            if ($_GET['success'] == 2) echo "Reserva cancelada correctamente";
-            ?>
+    <div class="container">
+        <?php if (isset($_GET['success'])): ?>
+            <div class="success">
+                <?php 
+                if ($_GET['success'] == 1) echo "Estado de cancha actualizado correctamente";
+                if ($_GET['success'] == 2) echo "Reserva cancelada correctamente";
+                ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="section">
+            <h2>Gestión de Canchas</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cancha</th>
+                        <th>Estado Actual</th>
+                        <th>Cambiar Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($canchas as $cancha): ?>
+                        <tr>
+                            <td><?php echo $cancha['nombre']; ?></td>
+                            <td>
+                                <?php 
+                                $estados = [
+                                    'disponible' => '✅ Disponible',
+                                    'mantenimiento' => '🔧 En Mantenimiento',
+                                    'ocupada' => '❌ Ocupada'
+                                ];
+                                echo $estados[$cancha['estado']];
+                                ?>
+                            </td>
+                            <td>
+                                <form method="POST" class="form-inline">
+                                    <input type="hidden" name="cancha_id" value="<?php echo $cancha['id']; ?>">
+                                    <select name="estado">
+                                        <option value="disponible" <?php echo $cancha['estado'] == 'disponible' ? 'selected' : ''; ?>>Disponible</option>
+                                        <option value="mantenimiento" <?php echo $cancha['estado'] == 'mantenimiento' ? 'selected' : ''; ?>>Mantenimiento</option>
+                                        <option value="ocupada" <?php echo $cancha['estado'] == 'ocupada' ? 'selected' : ''; ?>>Ocupada</option>
+                                    </select>
+                                    <button type="submit" name="cambiar_estado" class="btn btn-primary">Actualizar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
-    <?php endif; ?>
 
-    <div class="section">
-        <h2>Gestión de Canchas</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Cancha</th>
-                    <th>Estado Actual</th>
-                    <th>Cambiar Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($canchas as $cancha): ?>
+        <div class="section">
+            <h2>Reservas Activas</h2>
+            <table>
+                <thead>
                     <tr>
-                        <td><?php echo $cancha['nombre']; ?></td>
-                        <td>
-                            <?php 
-                            $estados = [
-                                'disponible' => '✅ Disponible',
-                                'mantenimiento' => '🔧 En Mantenimiento',
-                                'ocupada' => '❌ Ocupada'
-                            ];
-                            echo $estados[$cancha['estado']];
-                            ?>
-                        </td>
-                        <td>
-                            <form method="POST" class="form-inline">
-                                <input type="hidden" name="cancha_id" value="<?php echo $cancha['id']; ?>">
-                                <select name="estado">
-                                    <option value="disponible" <?php echo $cancha['estado'] == 'disponible' ? 'selected' : ''; ?>>Disponible</option>
-                                    <option value="mantenimiento" <?php echo $cancha['estado'] == 'mantenimiento' ? 'selected' : ''; ?>>Mantenimiento</option>
-                                    <option value="ocupada" <?php echo $cancha['estado'] == 'ocupada' ? 'selected' : ''; ?>>Ocupada</option>
-                                </select>
-                                <button type="submit" name="cambiar_estado" class="btn btn-primary">Actualizar</button>
-                            </form>
-                        </td>
+                        <th>ID</th>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Cancha</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Fecha Reserva</th>
+                        <th>Acciones</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php foreach ($reservas as $reserva): ?>
+                        <tr>
+                            <td><?php echo $reserva['id']; ?></td>
+                            <td><?php echo $reserva['usuario_nombre']; ?></td>
+                            <td><?php echo $reserva['email']; ?></td>
+                            <td><?php echo $reserva['cancha_nombre']; ?></td>
+                            <td><?php echo date('d/m/Y', strtotime($reserva['fecha'])); ?></td>
+                            <td><?php echo date('H:i', strtotime($reserva['hora'])); ?></td>
+                            <td><?php echo date('d/m/Y H:i', strtotime($reserva['fecha_reserva'])); ?></td>
+                            <td>
+                                <form method="POST" class="form-inline">
+                                    <input type="hidden" name="reserva_id" value="<?php echo $reserva['id']; ?>">
+                                    <button type="submit" name="cancelar_reserva" class="btn btn-danger" 
+                                            onclick="return confirm('¿Estás seguro de cancelar esta reserva?')">
+                                        Cancelar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <div class="section">
-        <h2>Reservas Activas</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Usuario</th>
-                    <th>Email</th>
-                    <th>Cancha</th>
-                    <th>Fecha</th>
-                    <th>Hora</th>
-                    <th>Fecha Reserva</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($reservas as $reserva): ?>
-                    <tr>
-                        <td><?php echo $reserva['id']; ?></td>
-                        <td><?php echo $reserva['usuario_nombre']; ?></td>
-                        <td><?php echo $reserva['email']; ?></td>
-                        <td><?php echo $reserva['cancha_nombre']; ?></td>
-                        <td><?php echo date('d/m/Y', strtotime($reserva['fecha'])); ?></td>
-                        <td><?php echo date('H:i', strtotime($reserva['hora'])); ?></td>
-                        <td><?php echo date('d/m/Y H:i', strtotime($reserva['fecha_reserva'])); ?></td>
-                        <td>
-                            <form method="POST" class="form-inline">
-                                <input type="hidden" name="reserva_id" value="<?php echo $reserva['id']; ?>">
-                                <button type="submit" name="cancelar_reserva" class="btn btn-danger" 
-                                        onclick="return confirm('¿Estás seguro de cancelar esta reserva?')">
-                                    Cancelar
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
+    
 
 <script>
 function toggleMenu() {

@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         body {
-            background-color: #f4e1c3;
+            background-color: #c2ffc2;
             display: flex;
             justify-content: center;
             align-items: center;

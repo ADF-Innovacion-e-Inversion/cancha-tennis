@@ -168,9 +168,22 @@ $reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reserva de Canchas</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #fbeedbff;}
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        /* .header h1 {text-shadow: 2px 5px 5px green}; */
+        body { font-family: Arial, sans-serif; margin: 0 auto;  background-color: #c2ffc2;}
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header { width: 100%; background-color: #eeffee;}
+        .header-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 5px 5px; /* ← ESTE ES EL ESPACIO LATERAL */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         .filtro { margin-bottom: 20px; }
         .disponibilidad-row {
             font-size: 15px;
@@ -186,19 +199,19 @@ $reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
         }
 
         .reservas-restantes {
-            border: 2px solid #d1bfa7;   /* borde suave */
+            border: 2px solid #000000;   /* borde suave */
             font-size: 15px;
             font-weight: bold;
             padding: 10px 10px;         /* ← espacio interno */
             border-radius: 8px;         /* opcional, se ve mejor */
         }
         table { width: 100%; border-collapse: collapse; background-color: #f5f5f5;}
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th, td { border: 1px solid #7f7f7f; padding: 10px; text-align: center; }
         th { background: #f8f9fa; }
-        .disponible { background: #d4edda; cursor: pointer; }
+        .disponible { background: #b9f5ff; cursor: pointer; } /* #d4edda  */
         .ocupada { background: #f8d7da; }
         .reservar-btn { padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
-        .reservar-btn:hover { background: #0056b3; }
+        .reservar-btn:hover { background: #000000; color: #00ff5e}
         
         .logo-link {
             display: flex;
@@ -226,7 +239,7 @@ $reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
             font-weight: bold;
         }
         .reservation-link:visited {color: #1d6cd2ff}
-        .logout-btn:hover{opacity: 0.5;}
+        .logout-btn:hover{background-color: #ffacaa; color: #000000;}
         .logout-btn {
             background-color: #dc3545;   /* rojo */
             color: #ffffff;              /* texto blanco */
@@ -250,7 +263,8 @@ $reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
         }
 
         .btn-reserva:hover {
-            opacity: 0.5;
+            background-color: #86c1ff;
+            color: #000000;
         }
 
         .btn-admin {
@@ -265,7 +279,8 @@ $reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
         }
 
         .btn-admin:hover {
-            opacity: 0.5;
+            background-color: #86c1ff;
+            color: #000000;
         }
   
         .Admin-link:hover{opacity: 0.5;}
@@ -280,6 +295,7 @@ $reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
         }
         .Bienvenida {
             font-size: 14px;
+            font-weight: bold;
             max-width: 200px;       /* límite físico */
             overflow: hidden;
             text-overflow: ellipsis;
@@ -391,8 +407,8 @@ $reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
                 position: absolute;
                 top: 40px;
                 right: 0;
-                background: #fbeedbff;
-                border: 1px solid #d1bfa7;
+                background: #eeffee;
+                border: 1px solid #7dfe7d;
                 border-radius: 8px;
                 padding: 12px;
                 flex-direction: column;
@@ -415,122 +431,127 @@ $reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
 
 <body>
     <div class="header">
-        <a href="index.php" class="logo-link">
-            <img src="teniscanchalogo.png" alt="Sistema de Reserva de Canchas" class="logo-img">
-        </a>
+        <div class="header-inner">
+            <a href="index.php" class="logo-link">
+                <img src="teniscanchalogo.png" alt="Sistema de Reserva de Canchas" class="logo-img">
+            </a>
 
-        <div class="nav-container">
-            <span class="Bienvenida">
-                Bienvenido, <?php echo $_SESSION['user_name']; ?>
-            </span>
+            <div class="nav-container">
+                <span class="Bienvenida">
+                    Bienvenido, <?php echo $_SESSION['user_name']; ?>
+                </span>
 
-            <!-- Botón hamburguesa -->
-            <button class="hamburger" onclick="toggleMenu()">☰</button>
+                <!-- Botón hamburguesa -->
+                <button class="hamburger" onclick="toggleMenu()">☰</button>
 
-            <!-- Menú -->
-            <div id="navMenu" class="nav-menu">
-                <form action="admin.php" method="get">
-                    <button type="submit" class="btn-admin">
-                        Administración
-                    </button>
-                </form>
+                <!-- Menú -->
+                <div id="navMenu" class="nav-menu">
+                    <form action="admin.php" method="get">
+                        <button type="submit" class="btn-admin">
+                            Administración
+                        </button>
+                    </form>
 
-                <form action="logout.php" method="post">
-                    <button type="submit" class="logout-btn">Cerrar Sesión</button>
-                </form>
+                    <form action="logout.php" method="post">
+                        <button type="submit" class="logout-btn">Cerrar Sesión</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-
-    <?php if (isset($_GET['success'])): ?>
-        <div class="success">¡Reserva realizada exitosamente!</div>
-    <?php endif; ?>
     
-    <?php if (isset($error)): ?>
-        <div class="error"><?php echo $error; ?></div>
-    <?php endif; ?>
+    <div class="container">
+        <?php if (isset($_GET['success'])): ?>
+            <div class="success">¡Reserva realizada exitosamente!</div>
+        <?php endif; ?>
+        
+        <?php if (isset($error)): ?>
+            <div class="error"><?php echo $error; ?></div>
+        <?php endif; ?>
 
-    <div class="filtro">
-        <form method="GET">
-            <label class="Filtro">Filtrar por fecha:</label>
-            <input type="date" name="fecha" value="<?php echo $fecha; ?>" min="<?php echo date('Y-m-d'); ?>">
-            <button type="submit" class="boton-filtro">Filtrar</button>
-        </form>
-    </div>
-
-    <div class="disponibilidad-row">
-        <h3 class="fecha-disponibilidad">
-            Disponibilidad para: <?php echo date('d/m/Y', strtotime($fecha)); ?>
-        </h3>
-
-        <div class="reservas-restantes">
-            <?php echo $reservasDisponibles; ?>  Reservas disponibles esta semana
+        <div class="filtro">
+            <form method="GET">
+                <label class="Filtro">Filtrar por fecha:</label>
+                <input type="date" name="fecha" value="<?php echo $fecha; ?>" min="<?php echo date('Y-m-d'); ?>">
+                <button type="submit" class="boton-filtro">Filtrar</button>
+            </form>
         </div>
-    </div>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>Hora</th>
-                <?php foreach ($canchas as $cancha): ?>
-                    <th><?php echo $cancha['nombre']; ?> 
-                        (<?php echo $cancha['estado'] == 'disponible' ? '✅' : '🚫'; ?>)
-                    </th>
-                <?php endforeach; ?>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($horas as $hora): ?>
+
+        <div class="disponibilidad-row">
+            <h3 class="fecha-disponibilidad">
+                Disponibilidad para: <?php echo date('d/m/Y', strtotime($fecha)); ?>
+            </h3>
+
+            <div class="reservas-restantes">
+                <?php echo $reservasDisponibles; ?>  Reservas disponibles esta semana
+            </div>
+        </div>
+        
+        <table>
+            <thead>
                 <tr>
-                    <td> 
-                        <?php echo date("H:i", strtotime($hora["inicio"])); //Se le da el formato a la hora (inicio - final) ?>
-                        -
-                        <?php echo date("H:i", strtotime($hora["fin"])); ?>
-                    </td>
+                    <th>Hora</th>
                     <?php foreach ($canchas as $cancha): ?>
-                        <td class="<?php echo isset($reservas_organizadas[$cancha['id']][$hora["inicio"]]) ? 'ocupada' : ($cancha['estado'] == 'disponible' ? 'disponible' : 'ocupada'); ?>">
-                            <?php if (isset($reservas_organizadas[$cancha['id']][$hora["inicio"]])): ?>
-                                Ocupada
-                            <?php elseif ($cancha['estado'] == 'disponible'): ?>
-                                <form method="POST" style="margin: 0;">
-                                    <input type="hidden" name="cancha_id" value="<?php echo $cancha['id']; ?>">
-                                    <input type="hidden" name="hora" value="<?php echo $hora["inicio"]; //Se utiliza la hora de inicio para reservar los bloques ?>">
-                                    <input type="hidden" name="reservar" value="1"> 
-                                    <button type="button"  class="reservar-btn" onclick="abrirVentanaFlotante(this)">Reservar</button> <!-- Se configura el boton de reservar para que active la ventana flotante -->
-                                    
-                                </form>
-                            <?php else: ?>
-                                No Disponible
-                            <?php endif; ?>
-                        </td>
+                        <th><?php echo $cancha['nombre']; ?> 
+                            (<?php echo $cancha['estado'] == 'disponible' ? '✅' : '🚫'; ?>)
+                        </th>
                     <?php endforeach; ?>
                 </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <?php foreach ($horas as $hora): ?>
+                    <tr>
+                        <td> 
+                            <?php echo date("H:i", strtotime($hora["inicio"])); //Se le da el formato a la hora (inicio - final) ?>
+                            -
+                            <?php echo date("H:i", strtotime($hora["fin"])); ?>
+                        </td>
+                        <?php foreach ($canchas as $cancha): ?>
+                            <td class="<?php echo isset($reservas_organizadas[$cancha['id']][$hora["inicio"]]) ? 'ocupada' : ($cancha['estado'] == 'disponible' ? 'disponible' : 'ocupada'); ?>">
+                                <?php if (isset($reservas_organizadas[$cancha['id']][$hora["inicio"]])): ?>
+                                    Ocupada
+                                <?php elseif ($cancha['estado'] == 'disponible'): ?>
+                                    <form method="POST" style="margin: 0;">
+                                        <input type="hidden" name="cancha_id" value="<?php echo $cancha['id']; ?>">
+                                        <input type="hidden" name="hora" value="<?php echo $hora["inicio"]; //Se utiliza la hora de inicio para reservar los bloques ?>">
+                                        <input type="hidden" name="reservar" value="1"> 
+                                        <button type="button"  class="reservar-btn" onclick="abrirVentanaFlotante(this)">Reservar</button> <!-- Se configura el boton de reservar para que active la ventana flotante -->
+                                        
+                                    </form>
+                                <?php else: ?>
+                                    No Disponible
+                                <?php endif; ?>
+                            </td>
+                        <?php endforeach; ?>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
 
-    <div class="nav-links">
-        <h3>Mis Reservas</h3>
+        <div class="nav-links">
+            <h3>Mis Reservas</h3>
 
-        <form action="mis_reservas.php" method="get">
-            <button type="submit" class="btn-reserva">
-                Ver mis reservas activas
-            </button>
-        </form>
-    </div>
+            <form action="mis_reservas.php" method="get">
+                <button type="submit" class="btn-reserva">
+                    Ver mis reservas activas
+                </button>
+            </form>
+        </div>
 
-<!-- Ventana flotante de confirmación -->
-<div id="ventanaFlotante" class="ventana-flotante">
-    <div class="ventana-flotante-contenido">
-        <h3>Confirmar reserva</h3>
-        <p>¿Estás seguro de que deseas realizar esta reserva?</p>
+    <!-- Ventana flotante de confirmación -->
+    <div id="ventanaFlotante" class="ventana-flotante">
+        <div class="ventana-flotante-contenido">
+            <h3>Confirmar reserva</h3>
+            <p>¿Estás seguro de que deseas realizar esta reserva?</p>
 
-        <div class="ventana-flotante-acciones">
-            <button id="btnConfirmarReserva" class="btn-confirmar">Sí, reservar</button>
-            <button id="btnCancelarReserva" class="btn-cancelar">Cancelar</button>
+            <div class="ventana-flotante-acciones">
+                <button id="btnConfirmarReserva" class="btn-confirmar">Sí, reservar</button>
+                <button id="btnCancelarReserva" class="btn-cancelar">Cancelar</button>
+            </div>
         </div>
     </div>
-</div>
+        </div>
+
 
 <script>
 let formularioSeleccionado = null;
