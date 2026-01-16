@@ -102,8 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background-image: url('teniscanchalogo.png');
             background-repeat: no-repeat;
             background-position: center;
-            background-size: cover; /* Ajustar imagen al tamaño del contenedor */
-            height: 63.5vh; /* Asegura que ocupe toda la altura visible */
+            background-size: cover; 
+            height: 63.5vh; 
             
         }
         
@@ -236,7 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
 
             .info-box {
-                display: none; /* igual que en la vista buena */
+                display: none; 
             }
 
             .login-box {

@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
         .header-inner {
             max-width: 1300px;
             margin: 0 auto;
-            padding: 5px 5px; /* ← ESTE ES EL ESPACIO LATERAL */
+            padding: 5px 5px; 
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
         }
 
         .logo-img {
-            height: 90px;        /* tamaño ideal header */
+            height: 90px;        
             width: auto;
             max-width: 260px;
             cursor: pointer;
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
 
         @media (max-width: 768px) {
             .logo-img {
-                height: 40px;    /* un poco más chico en celular */
+                height: 40px;    
             }
         }
         .btn-volver {
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
         .Bienvenida {
             font-size: 14px;
             font-weight: bold;
-            max-width: 200px;       /* límite físico */
+            max-width: 200px;       
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;

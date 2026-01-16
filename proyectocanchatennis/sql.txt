@@ -49,6 +49,6 @@ INSERT INTO canchas (nombre, estado) VALUES
 ('Cancha 3', 'disponible');
 
 -- Insertar usuario admin por defecto
-INSERT INTO usuarios (nombre, email, password, tipo) VALUES 
-('Administrador', 'admin@tenis.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+INSERT INTO usuarios (nombre, email, password, tipo, rut) VALUES 
+('Administrador', 'admin@tenis.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', '20000000-0');
 -- Contraseña: password

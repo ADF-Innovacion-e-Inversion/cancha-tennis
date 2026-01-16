@@ -58,7 +58,7 @@ $reservas = $pdo->query("
         .header-inner {
             max-width: 1300px;
             margin: 0 auto;
-            padding: 5px 5px; /* ← ESTE ES EL ESPACIO LATERAL */
+            padding: 5px 5px; 
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -82,13 +82,13 @@ $reservas = $pdo->query("
         }
 
         .logo-img {
-            height: 90px;       /* tamaño PC */
+            height: 90px;       
             width: auto;
             max-width: 260px;
         }
 
         .btn-sistema {
-            background-color: #007bff;   /* azul */
+            background-color: #007bff;   
             color: #ffffff;
             border: none;
             padding: 8px 14px;
@@ -104,7 +104,7 @@ $reservas = $pdo->query("
         }
 
         .btn-registro {
-            background-color: #007bff;   /* azul */
+            background-color: #007bff;   
             color: #ffffff;
             border: none;
             padding: 8px 14px;
@@ -121,8 +121,8 @@ $reservas = $pdo->query("
 
         .logout-btn:hover{background-color: #ffacaa; color: #000000;}
         .logout-btn {
-            background-color: #dc3545;   /* rojo */
-            color: #ffffff;              /* texto blanco */
+            background-color: #dc3545;   
+            color: #ffffff;              
             border: none;
             padding: 8px 14px;
             font-size: 15px;
@@ -160,7 +160,7 @@ $reservas = $pdo->query("
         .Bienvenida-texto {
             font-size: 14px;
             font-weight: bold;
-            max-width: 200px;       /* límite físico */
+            max-width: 200px;       
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -170,7 +170,7 @@ $reservas = $pdo->query("
             .form-inline {
                 display: flex;
                 flex-direction: column;
-                gap: 8px; /* ← espacio entre select y botón */
+                gap: 8px; 
             }
         }
 
@@ -202,7 +202,7 @@ $reservas = $pdo->query("
         /* --- MODO CELULAR --- */
         @media (max-width: 768px) {
             .logo-img {
-                height: 40px;   /* tamaño celular */
+                height: 40px;   
                 max-width: 180px;
             }
         }

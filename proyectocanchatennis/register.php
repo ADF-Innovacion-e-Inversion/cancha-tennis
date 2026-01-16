@@ -134,8 +134,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             padding: 40px;
             border-radius: 10px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
-            width: 480px;;          /*controla el ancho */
-            max-width: 90%;        /*responsive en pantallas chicas */
+            width: 480px;         
+            max-width: 90%;        
         }
         
         .container-box h2 {
@@ -223,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             outline: none;
         }
 
-        /* --- MODO CELULAR --- */
+        
         
     </style>
 </head>

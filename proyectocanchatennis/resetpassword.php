@@ -3,7 +3,7 @@ include 'config.php';
 
 if (!isLoggedIn()) {
     header('Location: login.php');
-    exit(); // Este bloque ees para que solo usuarios logueados puedan acceder a la vista para cambiar contraseña
+    exit(); // Este bloque es para que solo usuarios logueados puedan acceder a la vista para cambiar contraseña
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -93,8 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             padding: 40px;
             border-radius: 10px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
-            width: 480px;;          /*controla el ancho */
-            max-width: 90%;        /*responsive en pantallas chicas */
+            width: 480px;;          
+            max-width: 90%;        
         }
             
         .container-box h2 {

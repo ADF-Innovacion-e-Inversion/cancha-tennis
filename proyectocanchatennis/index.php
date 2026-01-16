@@ -83,17 +83,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
 
     } else {
 
-        // Validación: mínimo 3 días de anticipación (solo por día, sin hora)
-        $hoy = new DateTime('today');                 // hoy a las 00:00
-        $fechaCancha = new DateTime($fecha);          // fecha seleccionada (00:00)
-        $fechaMinima = (clone $hoy)->modify('+3 days');
+        // Validación: solo permitir reservas hoy, mañana o pasado mañana
+        $hoy = new DateTime('today'); // hoy a las 00:00
+        $fechaCancha = new DateTime($fecha); // fecha seleccionada (00:00)
 
-        if ($fechaCancha < $fechaMinima) {
-            $fechaHabil = $fechaMinima->format("d/m/Y");
-            
+        // Permitir hasta 2 días de anticipación (hoy, mañana y pasado mañana)
+        $fechaMaxima = (clone $hoy)->modify('+2 days'); // Fecha máxima: pasado mañana
 
-            $error = "Las reservas deben realizarse con al menos 3 días de anticipación. "
-                . "Podrás reservar a partir del {$fechaHabil}.";
+        if ($fechaCancha < $hoy || $fechaCancha > $fechaMaxima) {
+            $fechaHabil = $fechaMaxima->format("d/m/Y");
+            $error = "Las reservas solo pueden realizarse para hoy, mañana o pasado mañana. "
+                . "Podrás reservar hasta el {$fechaHabil}.";
         } else {
 
             // 🔐 Validación por plan (24 horas)
@@ -194,7 +194,7 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
         .header-inner {
             max-width: 1300px;
             margin: 0 auto;
-            padding: 5px 5px; /* ← ESTE ES EL ESPACIO LATERAL */
+            padding: 5px 5px; 
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -210,16 +210,16 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
         .fecha-disponibilidad {
             font-size: 15px;
             font-weight: bold;
-            padding: 10px 10px;         /* ← espacio interno */
-            border-radius: 8px;         /* opcional, se ve mejor */
+            padding: 10px 10px;         
+            border-radius: 8px;         
         }
 
         .reservas-restantes {
-            border: 2px solid #000000;   /* borde suave */
+            border: 2px solid #000000;   
             font-size: 15px;
             font-weight: bold;
-            padding: 10px 10px;         /* ← espacio interno */
-            border-radius: 8px;         /* opcional, se ve mejor */
+            padding: 10px 10px;         
+            border-radius: 8px;         
         }
         table { width: 100%; border-collapse: collapse; background-color: #f5f5f5;}
         th, td { border: 1px solid #7f7f7f; padding: 10px; text-align: center; }
@@ -235,7 +235,7 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
         }
 
         .logo-img {
-            height: 90px;        /* tamaño ideal header */
+            height: 90px;        
             width: auto;
             max-width: 260px;
             cursor: pointer;
@@ -243,7 +243,7 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
 
         @media (max-width: 768px) {
             .logo-img {
-                height: 40px;    /* un poco más chico en celular */
+                height: 40px;    
             }
         }
         
@@ -257,8 +257,8 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
         .reservation-link:visited {color: #1d6cd2ff}
         .logout-btn:hover{background-color: #ffacaa; color: #000000;}
         .logout-btn {
-            background-color: #dc3545;   /* rojo */
-            color: #ffffff;              /* texto blanco */
+            background-color: #dc3545;   
+            color: #ffffff;              
             border: none;
             padding: 8px 14px;
             font-size: 15px;
@@ -268,7 +268,7 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
         }
 
         .btn-reserva {
-            background-color: #007bff;   /* azul */
+            background-color: #007bff;   
             color: #ffffff;
             border: none;
             padding: 8px 14px;
@@ -312,7 +312,7 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
         .Bienvenida {
             font-size: 14px;
             font-weight: bold;
-            max-width: 200px;       /* límite físico */
+            max-width: 200px;       
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -327,9 +327,9 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
             padding: 4px 8px;
         }
         input[name="fecha"] {
-            font-size: 15px;     /* tamaño del texto */
-            padding: 8px 8px;  /* altura del campo */
-            width: 150px;        /* ancho del calendario */
+            font-size: 15px;     
+            padding: 8px 8px;  
+            width: 150px;        
             border-radius: 5px;
             border: 1px solid #ccc;
         }
@@ -409,7 +409,7 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
         }
 
         .no-disponible {
-            background-color: #f8d7da; /* Rojo claro */
+            background-color: #f8d7da; 
             
         }
 
