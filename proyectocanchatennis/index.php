@@ -46,7 +46,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
     $cancha_id = $_POST['cancha_id'];
     $hora = $_POST['hora'];
     
-    
+    // Definir si es tarde (después de las 20:00)
+    $horaReserva = new DateTime($hora);
+    $horaLimite = new DateTime('20:00:00');
+    $esTarde = $horaReserva >= $horaLimite;
+
+    // Si la hora es 20:00 o después, añadir el mensaje especial
+    if ($esTarde) {
+        $mensajePago = "Recuerda que debes realizar el pago antes de la reserva.";
+    } else {
+        $mensajePago = "";
+    }
+
     /*
     Validación: máximo 3 reservas por semana
     */
@@ -548,6 +559,7 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
         <div class="ventana-flotante-contenido">
             <h3>Confirmar reserva</h3>
             <p>¿Estás seguro de que deseas realizar esta reserva?</p>
+            <p id="mensajePago" style="color: red;"></p>  <!-- Aquí se agregará el mensaje adicional si la hora es posterior a las 20:00 -->
 
             <div class="ventana-flotante-acciones">
                 <button id="btnConfirmarReserva" class="btn-confirmar">Sí, reservar</button>
@@ -555,15 +567,28 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
             </div>
         </div>
     </div>
-        </div>
 
 
 <script>
 let formularioSeleccionado = null;
 
-//Aca se define la funcion javascript para la condiguración de la ventana flotante de confirmación
+// Función para abrir la ventana flotante y mostrar el mensaje si es necesario
 function abrirVentanaFlotante(boton) {
     formularioSeleccionado = boton.closest("form");
+    const horaSeleccionada = formularioSeleccionado.querySelector("input[name='hora']").value;  // Hora seleccionada
+
+    // Verificamos si la hora es mayor o igual a las 20:00
+    const horaLimite = '20:00:00';
+    const mensajePago = (horaSeleccionada >= horaLimite) ? "Recuerda que debes realizar el pago." : "";
+
+    // Mostramos el mensaje adicional si la hora es 20:00 o después
+    if (mensajePago) {
+        document.getElementById("mensajePago").innerText = mensajePago;
+    } else {
+        document.getElementById("mensajePago").innerText = ""; // Limpiamos cualquier mensaje anterior
+    }
+
+    // Mostrar la ventana flotante
     document.getElementById("ventanaFlotante").style.display = "flex";
 }
 
