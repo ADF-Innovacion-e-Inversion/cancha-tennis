@@ -159,6 +159,9 @@ $totalSemana = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
 $reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
 
+// Verificar si el usuario es admin
+$isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
+
 ?>
 
 <!DOCTYPE html>
@@ -446,11 +449,13 @@ $reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
 
                 <!-- Menú -->
                 <div id="navMenu" class="nav-menu">
-                    <form action="admin.php" method="get">
-                        <button type="submit" class="btn-admin">
-                            Administración
-                        </button>
-                    </form>
+                    <?php if ($isAdmin): ?>
+                        <form action="admin.php" method="get">
+                            <button type="submit" class="btn-admin">
+                                Administración
+                            </button>
+                        </form>
+                    <?php endif; ?>
 
                     <form action="logout.php" method="post">
                         <button type="submit" class="logout-btn">Cerrar Sesión</button>
