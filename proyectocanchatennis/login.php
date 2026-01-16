@@ -41,33 +41,58 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inicio de Sesión</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
+        * {   
             box-sizing: border-box;
             font-family: 'Arial', sans-serif;
         }
         
         body {
             background-color: #c2ffc2;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0;
             min-height: 100vh;
         }
         
         .container {
-            display: flex;
-            width: 100%;
             max-width: 900px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            padding: 20px;
+
+            /* centra SOLO el formulario */
+            min-height: calc(100vh - 120px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
             border-radius: 10px;
             overflow: hidden;
+            min-height: calc(100vh - 120px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .header {
+            width: 100%;
+            background-color: #eeffee;
+        }
+
+        .header-inner {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 5px 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-img {
+            height: 90px;
+            width: auto;
+            max-width: 260px;
+            cursor: pointer;
         }
         
         .info-box {
             flex: 1;
-            background: linear-gradient(rgba(20, 192, 140, 0.6),rgba(16, 136, 90, 0.8)); 
+            background: linear-gradient(rgba(20, 192, 140, 0.6), rgba(16, 136, 90, 0.8));
             background-color: #f5f5f5;
             color: white;
             padding: 40px;
@@ -75,8 +100,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             flex-direction: column;
             justify-content: center;
             background-image: url('teniscanchalogo.png');
-            background-repeat: no-repeat; 
+            background-repeat: no-repeat;
             background-position: center;
+            background-size: cover; /* Ajustar imagen al tamaño del contenedor */
+            height: 63.5vh; /* Asegura que ocupe toda la altura visible */
             
         }
         
@@ -199,9 +226,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 20px;
-            }
+            
 
             .container {
                 flex-direction: column;
@@ -216,15 +241,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             .login-box {
                 padding: 25px;
+                border-radius: 10px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
             }
 
             .login-box h2 {
                 font-size: 24px;
             }
+
+            .logo-img {
+                height: 40px;
+            }
         }
     </style>
 </head>
 <body>
+
+    <div class="header">
+        <div class="header-inner">
+            <a href="login.php">
+                <img src="teniscanchalogo.png" alt="Sistema de Canchas" class="logo-img">
+            </a>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Rectángulo de información -->
         <div class="info-box">
