@@ -17,6 +17,8 @@ $limiteDiario  = ($planUsuario === 'Familiar') ? 3 : 1;
 
 // Procesar filtro de fecha
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
+// Verificar si es domingo
+$esDomingo = (date('w', strtotime($fecha)) == 0); // 0 significa domingo
 
 // Obtener reservas para la fecha seleccionada
 $stmt = $pdo->prepare("
@@ -406,6 +408,11 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
             gap: 12px;
         }
 
+        .no-disponible {
+            background-color: #f8d7da; /* Rojo claro */
+            
+        }
+
         .hamburger {
             display: none;
             font-size: 26px;
@@ -523,16 +530,21 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
                             <?php echo date("H:i", strtotime($hora["fin"])); ?>
                         </td>
                         <?php foreach ($canchas as $cancha): ?>
-                            <td class="<?php echo isset($reservas_organizadas[$cancha['id']][$hora["inicio"]]) ? 'ocupada' : ($cancha['estado'] == 'disponible' ? 'disponible' : 'ocupada'); ?>">
-                                <?php if (isset($reservas_organizadas[$cancha['id']][$hora["inicio"]])): ?>
+                            <?php 
+                            // Verificar si es domingo y si la hora es posterior a las 11:00
+                            $esHoraNoDisponible = ($esDomingo && strtotime($hora["inicio"]) > strtotime("11:00:00"));
+                            ?>
+                            <td class="<?php echo isset($reservas_organizadas[$cancha['id']][$hora["inicio"]]) ? 'ocupada' : ($esHoraNoDisponible ? 'no-disponible' : ($cancha['estado'] == 'disponible' ? 'disponible' : 'ocupada')); ?>">
+                                <?php if ($esHoraNoDisponible): ?>
+                                    No disponible
+                                <?php elseif (isset($reservas_organizadas[$cancha['id']][$hora["inicio"]])): ?>
                                     Ocupada
                                 <?php elseif ($cancha['estado'] == 'disponible'): ?>
                                     <form method="POST" style="margin: 0;">
                                         <input type="hidden" name="cancha_id" value="<?php echo $cancha['id']; ?>">
-                                        <input type="hidden" name="hora" value="<?php echo $hora["inicio"]; //Se utiliza la hora de inicio para reservar los bloques ?>">
+                                        <input type="hidden" name="hora" value="<?php echo $hora["inicio"]; // Se utiliza la hora de inicio para reservar los bloques ?>">
                                         <input type="hidden" name="reservar" value="1"> 
-                                        <button type="button"  class="reservar-btn" onclick="abrirVentanaFlotante(this)">Reservar</button> <!-- Se configura el boton de reservar para que active la ventana flotante -->
-                                        
+                                        <button type="button" class="reservar-btn" onclick="abrirVentanaFlotante(this)">Reservar</button>
                                     </form>
                                 <?php else: ?>
                                     No Disponible
