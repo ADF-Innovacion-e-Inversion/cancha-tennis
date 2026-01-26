@@ -257,6 +257,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
         }
     </style>
+
+
+<link rel="icon" href="teniscanchalogo.png" type="image/png">
 </head>
 <body>
 
