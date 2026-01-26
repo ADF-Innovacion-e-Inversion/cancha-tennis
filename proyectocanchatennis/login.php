@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             background-image: url('teniscanchalogo.png');
             background-repeat: no-repeat;
             background-position: center;
-            background-size: cover; 
+            background-size: cover;
             height: 63.5vh; 
             
         }
