@@ -89,22 +89,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             max-width: 260px;
             cursor: pointer;
         }
+
+        /*background-color: #f5f5f5;*/
         
         .info-box {
             flex: 1;
-            background: linear-gradient(rgba(20, 192, 140, 0.6), rgba(16, 136, 90, 0.8));
             background-color: #f5f5f5;
-            color: white;
-            padding: 40px;
             display: flex;
-            flex-direction: column;
             justify-content: center;
-            background-image: url('teniscanchalogo.png');
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: cover;
-            height: 63.5vh; 
+            align-items: center;
+            padding: 40px;
             
+        }
+
+        .info-logo {
+            max-width: 100%;
+            max-height: 100%;
+            width: 350px;       /* ajusta el tamaño base */
+            height: auto;       /* mantiene proporción */
+            object-fit: contain;
         }
         
         .info-box h2 {
@@ -120,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .login-box {
             flex: 1;
             background-color: white;
-            padding: 40px;
+            padding: 30px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -268,6 +271,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <div class="container">
         <!-- Rectángulo de información -->
         <div class="info-box">
+            <img src="teniscanchalogo.png" alt="Logo" class="info-logo">
             <!-- <h2>Bienvenido a Project</h2>
             <p> <p> -->
             <!-- <p>Accede a tu cuenta para gestionar todos los servicios disponibles.</p>
