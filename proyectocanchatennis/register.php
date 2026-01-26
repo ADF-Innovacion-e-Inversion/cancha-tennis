@@ -259,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 <div class="form-group">
                     <label>RUT:</label>
-                    <input type="text" name="rut" id="rut" required placeholder="Sin puntos ni guión">
+                    <input type="text" name="rut" id="rut" required placeholder="Sin puntos ni guión" maxlength="10">
                 </div>
 
                 <div class="form-group">
@@ -269,7 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 <div class="form-group">
                     <label>Teléfono:</label>
-                    <input type="number" name="telefono" required placeholder="Ej: 9XXXXXXXX">
+                    <input type="text" name="telefono" required placeholder="Ej: 9XXXXXXXX" maxlength="9">
                 </div>
 
                 <div class="form-group">

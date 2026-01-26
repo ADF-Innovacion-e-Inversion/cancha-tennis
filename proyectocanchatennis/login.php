@@ -304,6 +304,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         name="rut"
                         placeholder="Sin puntos ni guión"
                         required
+                        maxlength="10"
                     >
                 </div>
                 <div class="form-group">
