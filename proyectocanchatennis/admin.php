@@ -208,6 +208,8 @@ $reservas = $pdo->query("
         }
 
     </style>
+
+<link rel="icon" href="teniscanchalogo.png" type="image/png">    
 </head>
 <body>
     <div class="header">

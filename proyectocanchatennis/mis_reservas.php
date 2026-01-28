@@ -168,6 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
             }
         }
     </style>
+
+<link rel="icon" href="teniscanchalogo.png" type="image/png">    
 </head>
 <body>
     <div class="header">

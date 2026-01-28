@@ -447,6 +447,8 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
         }
 
     </style>
+
+<link rel="icon" href="teniscanchalogo.png" type="image/png">    
 </head>
 
 
