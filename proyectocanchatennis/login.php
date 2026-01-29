@@ -1,33 +1,34 @@
 <?php
 include 'config.php';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $rut = trim($_POST['rut']); // Ahora se loguean con el RUT
-    $password = trim($_POST['password']);
-    
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $rut = trim($_POST["rut"]);
+    $password = trim($_POST["password"]);
+
     $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE rut = ?");
     $stmt->execute([$rut]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_name'] = $user['nombre'];
-        $_SESSION['user_type'] = $user['tipo'];
-        
-        // Login Admin
-        if ($user['tipo'] === 'admin') {
-            header('Location: admin.php');
-        } else {
-           // Forzar cambio de contraseña si es temporal
-            if ($user['password_temporal'] == 1) {
-                header('Location: resetpassword.php');
-                exit();
-            } else {
-                header('Location: index.php');
-            }
-            exit(); 
-        }      
-        
+
+    if ($user && password_verify($password, $user["password"])) {
+        $_SESSION["user_id"] = $user["id"];
+        $_SESSION["user_name"] = $user["nombre"];
+        $_SESSION["user_type"] = $user["tipo"];
+
+        // Si es temporal, SIEMPRE manda a reset (admin y socio)
+        if ((int)$user["password_temporal"] === 1) {
+            header("Location: resetpassword.php");
+            exit();
+        }
+
+        // Si no es temporal, manda según tipo
+        if ($user["tipo"] === "admin") {
+            header("Location: admin.php");
+            exit();
+        }
+
+        header("Location: index.php");
+        exit();
+
     } else {
         $error = "Usuario o contraseña incorrectos";
     }

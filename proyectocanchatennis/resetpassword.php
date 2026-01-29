@@ -22,8 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             WHERE id = ?
         ");
 
-        if ($stmt->execute([$hashed, $_SESSION['user_id']])) {
-            header('Location: index.php');
+        if ($stmt->execute([$hashed, $_SESSION["user_id"]])) {
+            if (isset($_SESSION["user_type"]) && $_SESSION["user_type"] === "admin") {
+                header("Location: admin.php");
+                exit();
+            }
+
+            header("Location: index.php");
             exit();
         } else {
             $error = "Error al actualizar la contraseña";
