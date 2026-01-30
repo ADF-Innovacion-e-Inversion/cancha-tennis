@@ -30,7 +30,7 @@ function isAdmin() {
 function getHorasDisponibles() {
     return [
         [
-            "inicio" => "07:30:00",
+            "inicio" => "07:00:00",
             "fin"    => "08:30:00"
         ],
         [

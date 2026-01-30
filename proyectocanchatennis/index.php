@@ -13,7 +13,7 @@ $planUsuario = $stmt->fetchColumn(); // 'Individual' o 'Familiar'
 
 // 🔐 Límites según plan
 $limiteSemanal = ($planUsuario === 'Familiar') ? 6 : 3;
-$limiteDiario  = ($planUsuario === 'Familiar') ? 3 : 1;
+$limiteDiario  = ($planUsuario === 'Familiar') ? 2 : 1;
 
 // Procesar filtro de fecha
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
@@ -41,16 +41,18 @@ foreach ($reservas as $reserva) {
 $canchas = $pdo->query("SELECT * FROM canchas")->fetchAll(PDO::FETCH_ASSOC);
 $horas = getHorasDisponibles();
 
+// Verificar si el usuario es admin
+$isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
 
 
 // Procesar nueva reserva al presionar el botón
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
-    $cancha_id = $_POST['cancha_id'];
-    $hora = $_POST['hora'];
-    
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
+    $cancha_id = $_POST["cancha_id"];
+    $hora = $_POST["hora"];
+
     // Definir si es tarde (después de las 20:00)
     $horaReserva = new DateTime($hora);
-    $horaLimite = new DateTime('20:00:00');
+    $horaLimite = new DateTime("20:00:00");
     $esTarde = $horaReserva >= $horaLimite;
 
     // Si la hora es 20:00 o después, añadir el mensaje especial
@@ -60,102 +62,139 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reservar'])) {
         $mensajePago = "";
     }
 
-    /*
-    Validación: máximo 3 reservas por semana
-    */
+    // ✅ ADMIN: no aplicar restricciones (pero sí validar disponibilidad)
+    if ($isAdmin) {
 
-    $stmt = $pdo->prepare("
-        SELECT COUNT(*) as total
-        FROM reservas
-        WHERE usuario_id = ?
-        AND estado = 'confirmada'
-        AND YEARWEEK(fecha_reserva, 1) = YEARWEEK(CURDATE(), 1)
-    ");
-    $stmt->execute([$_SESSION['user_id']]);
-    $totalSemana = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+        // Verificar si la cancha ya está reservada en ese horario
+        $stmt = $pdo->prepare("
+            SELECT id
+            FROM reservas
+            WHERE cancha_id = ?
+              AND fecha = ?
+              AND hora = ?
+              AND estado = 'confirmada'
+        ");
+        $stmt->execute([$cancha_id, $fecha, $hora]);
 
-    if ($totalSemana >= $limiteSemanal) {
-        if ($planUsuario === 'Familiar') {
-            $error = "Tu plan Familiar permite hasta 6 reservas activas por semana.";
+        if ($stmt->rowCount() == 0) {
+            $stmt = $pdo->prepare("
+                INSERT INTO reservas (usuario_id, cancha_id, fecha, hora)
+                VALUES (?, ?, ?, ?)
+            ");
+            if ($stmt->execute([$_SESSION["user_id"], $cancha_id, $fecha, $hora])) {
+                header("Location: index.php?fecha=$fecha&success=1");
+                exit();
+            }
         } else {
-            $error = "Tu plan Individual permite hasta 3 reservas activas por semana.";
+            $error = "La cancha ya está reservada en ese horario";
         }
 
     } else {
 
-        // Validación: solo permitir reservas hoy, mañana o pasado mañana
-        $hoy = new DateTime('today'); // hoy a las 00:00
-        $fechaCancha = new DateTime($fecha); // fecha seleccionada (00:00)
+        /*
+        Validación: máximo reservas por semana (según plan)
+        */
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as total
+            FROM reservas
+            WHERE usuario_id = ?
+              AND estado = 'confirmada'
+              AND YEARWEEK(fecha_reserva, 1) = YEARWEEK(CURDATE(), 1)
+        ");
+        $stmt->execute([$_SESSION["user_id"]]);
+        $totalSemana = (int)$stmt->fetch(PDO::FETCH_ASSOC)["total"];
 
-        // Permitir hasta 2 días de anticipación (hoy, mañana y pasado mañana)
-        $fechaMaxima = (clone $hoy)->modify('+2 days'); // Fecha máxima: pasado mañana
+        if ($totalSemana >= $limiteSemanal) {
+            if ($planUsuario === "Familiar") {
+                $error = "Tu plan Familiar permite hasta 6 reservas activas por semana.";
+            } else {
+                $error = "Tu plan Individual permite hasta 3 reservas activas por semana.";
+            }
 
-        if ($fechaCancha < $hoy || $fechaCancha > $fechaMaxima) {
-            $fechaHabil = $fechaMaxima->format("d/m/Y");
-            $error = "Las reservas solo pueden realizarse para hoy, mañana o pasado mañana. "
-                . "Podrás reservar hasta el {$fechaHabil}.";
         } else {
 
-            // 🔐 Validación por plan (24 horas)
+            // Validación: solo permitir reservas hoy, mañana o pasado mañana
+            $hoy = new DateTime("today"); // hoy a las 00:00
+            $fechaCancha = new DateTime($fecha); // fecha seleccionada (00:00)
 
-            $stmt = $pdo->prepare("
-                SELECT COUNT(*) 
-                FROM reservas
-                WHERE usuario_id = ?
-                AND estado = 'confirmada'
-                AND fecha_reserva >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
-            ");
-            $stmt->execute([$_SESSION['user_id']]);
-            $reservasUltimas24h = (int)$stmt->fetchColumn();
+            // Permitir hasta 2 días de anticipación (hoy, mañana y pasado mañana)
+            $fechaMaxima = (clone $hoy)->modify("+2 days"); // Fecha máxima: pasado mañana
 
-            if ($reservasUltimas24h >= $limiteDiario) {
+            if ($fechaCancha < $hoy || $fechaCancha > $fechaMaxima) {
+                $fechaHabil = $fechaMaxima->format("d/m/Y");
+                $error = "Las reservas solo pueden realizarse para hoy, mañana o pasado mañana. "
+                    . "Podrás reservar hasta el {$fechaHabil}.";
+            } else {
 
-                // Obtener la ÚLTIMA reserva realizada
+                // 🔐 Validación por plan (24 horas)
                 $stmt = $pdo->prepare("
-                    SELECT fecha_reserva
+                    SELECT COUNT(*)
                     FROM reservas
                     WHERE usuario_id = ?
-                    AND estado = 'confirmada'
-                    ORDER BY fecha_reserva DESC
-                    LIMIT 1
+                      AND estado = 'confirmada'
+                      AND fecha_reserva >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
                 ");
-                $stmt->execute([$_SESSION['user_id']]);
-                $fechaUltima = new DateTime($stmt->fetchColumn());
+                $stmt->execute([$_SESSION["user_id"]]);
+                $reservasUltimas24h = (int)$stmt->fetchColumn();
 
-                $proximaDisponible = (clone $fechaUltima)->modify('+24 hours');
-                $ahora = new DateTime();
+                if ($reservasUltimas24h >= $limiteDiario) {
 
-                $diff = $ahora->diff($proximaDisponible);
-                $horasRestantes = ($diff->days * 24) + $diff->h;
-                $minutosRestantes = $diff->i;
+                    // Obtener la ÚLTIMA reserva realizada
+                    $stmt = $pdo->prepare("
+                        SELECT fecha_reserva
+                        FROM reservas
+                        WHERE usuario_id = ?
+                          AND estado = 'confirmada'
+                        ORDER BY fecha_reserva DESC
+                        LIMIT 1
+                    ");
+                    $stmt->execute([$_SESSION["user_id"]]);
+                    $fechaUltima = new DateTime($stmt->fetchColumn());
 
-                if ($planUsuario === 'Familiar') {
-                    $error = "Tu plan Familiar permite hasta 3 reservas cada 24 horas. "
-                        . "Podrás reservar nuevamente en {$horasRestantes} horas y {$minutosRestantes} minutos.";
+                    $proximaDisponible = (clone $fechaUltima)->modify("+24 hours");
+                    $ahora = new DateTime();
+
+                    $diff = $ahora->diff($proximaDisponible);
+                    $horasRestantes = ($diff->days * 24) + $diff->h;
+                    $minutosRestantes = $diff->i;
+
+                    if ($planUsuario === "Familiar") {
+                        $error = "Tu plan Familiar permite hasta 2 reservas cada 24 horas. "
+                            . "Podrás reservar nuevamente en {$horasRestantes} horas y {$minutosRestantes} minutos.";
+                    } else {
+                        $error = "Tu plan Individual permite solo 1 reserva cada 24 horas. "
+                            . "Podrás reservar nuevamente en {$horasRestantes} horas y {$minutosRestantes} minutos.";
+                    }
+
                 } else {
-                    $error = "Tu plan Individual permite solo 1 reserva cada 24 horas. "
-                        . "Podrás reservar nuevamente en {$horasRestantes} horas y {$minutosRestantes} minutos.";
-                }
 
-            } else {
-                // Verificar si la cancha está disponible
-                    $stmt = $pdo->prepare("SELECT id FROM reservas WHERE cancha_id = ? AND fecha = ? AND hora = ? AND estado = 'confirmada'");
+                    // Verificar si la cancha está disponible (no reservada)
+                    $stmt = $pdo->prepare("
+                        SELECT id
+                        FROM reservas
+                        WHERE cancha_id = ?
+                          AND fecha = ?
+                          AND hora = ?
+                          AND estado = 'confirmada'
+                    ");
                     $stmt->execute([$cancha_id, $fecha, $hora]);
-                    
+
                     if ($stmt->rowCount() == 0) {
-                        $stmt = $pdo->prepare("INSERT INTO reservas (usuario_id, cancha_id, fecha, hora) VALUES (?, ?, ?, ?)");
-                        if ($stmt->execute([$_SESSION['user_id'], $cancha_id, $fecha, $hora])) {
+                        $stmt = $pdo->prepare("
+                            INSERT INTO reservas (usuario_id, cancha_id, fecha, hora)
+                            VALUES (?, ?, ?, ?)
+                        ");
+                        if ($stmt->execute([$_SESSION["user_id"], $cancha_id, $fecha, $hora])) {
                             header("Location: index.php?fecha=$fecha&success=1");
                             exit();
                         }
                     } else {
                         $error = "La cancha ya está reservada en ese horario";
                     }
+                }
             }
-
         }
     }
-    
 }
 
 // Función para calcular las reservas disponibles para la semana (según plan)
@@ -170,10 +209,14 @@ $stmt = $pdo->prepare("
 $stmt->execute([$_SESSION['user_id']]);
 $totalSemana = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-$reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
+// ✅ Si es admin, puedes mostrar "∞" (opcional). Si no quieres, borra este if.
+if ($isAdmin) {
+    $reservasDisponibles = "Ilimitadas";
+} else {
+    $reservasDisponibles = max(0, $limiteSemanal - $totalSemana);
+}
 
-// Verificar si el usuario es admin
-$isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
+
 
 ?>
 
@@ -508,7 +551,7 @@ $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
             </h3>
 
             <div class="reservas-restantes">
-                <?php echo $reservasDisponibles; ?>  Reservas disponibles esta semana
+                Reservas disponibles esta semana: <?php echo $reservasDisponibles; ?>
             </div>
         </div>
         
