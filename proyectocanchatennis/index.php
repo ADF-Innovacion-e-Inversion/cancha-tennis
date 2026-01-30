@@ -44,6 +44,16 @@ $horas = getHorasDisponibles();
 // Verificar si el usuario es admin
 $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
 
+//traer lista de usuarios (solo admin)
+$usuariosParaAsignar = [];
+if ($isAdmin) {
+    $stmt = $pdo->query("
+        SELECT id, nombre, apellido, rut, email
+        FROM usuarios
+        ORDER BY nombre ASC, apellido ASC
+    ");
+    $usuariosParaAsignar = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 
 // Procesar nueva reserva al presionar el botón
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
@@ -70,25 +80,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
             SELECT id
             FROM reservas
             WHERE cancha_id = ?
-              AND fecha = ?
-              AND hora = ?
-              AND estado = 'confirmada'
+            AND fecha = ?
+            AND hora = ?
+            AND estado = 'confirmada'
         ");
         $stmt->execute([$cancha_id, $fecha, $hora]);
 
         if ($stmt->rowCount() == 0) {
+
             $stmt = $pdo->prepare("
                 INSERT INTO reservas (usuario_id, cancha_id, fecha, hora)
                 VALUES (?, ?, ?, ?)
             ");
-            if ($stmt->execute([$_SESSION["user_id"], $cancha_id, $fecha, $hora])) {
-                header("Location: index.php?fecha=$fecha&success=1");
-                exit();
+
+            $usuarioIdFinal = (int)($_POST["usuario_id_asignado"] ?? 0);
+
+            if ($usuarioIdFinal <= 0) {
+                $error = "Debes asignar un usuario para realizar la reserva.";
+            } else {
+                if ($stmt->execute([$usuarioIdFinal, $cancha_id, $fecha, $hora])) {
+                    header("Location: index.php?fecha=$fecha&success=1");
+                    exit();
+                } else {
+                    $error = "No se pudo registrar la reserva.";
+                }
             }
+
         } else {
             $error = "La cancha ya está reservada en ese horario";
         }
-
     } else {
 
         /*
@@ -487,6 +507,20 @@ if ($isAdmin) {
             .hamburger {
                 display: block;
             }
+
+            .ventana-flotante {
+                width: 100%;
+                padding-left: 16px;
+                padding-right: 16px;
+                box-sizing: border-box;
+            }
+
+            .ventana-flotante-contenido {
+                width: 100%;            /* ocupa el espacio disponible */
+                max-width: 340px;       /* ✅ límite para que no sea gigante */
+                box-sizing: border-box; /* ✅ el padding no aumenta el ancho */
+            }
+
         }
 
     </style>
@@ -586,10 +620,17 @@ if ($isAdmin) {
                                     Ocupada
                                 <?php elseif ($cancha['estado'] == 'disponible'): ?>
                                     <form method="POST" style="margin: 0;">
-                                        <input type="hidden" name="cancha_id" value="<?php echo $cancha['id']; ?>">
-                                        <input type="hidden" name="hora" value="<?php echo $hora["inicio"]; // Se utiliza la hora de inicio para reservar los bloques ?>">
-                                        <input type="hidden" name="reservar" value="1"> 
-                                        <button type="button" class="reservar-btn" onclick="abrirVentanaFlotante(this)">Reservar</button>
+                                        <input type="hidden" name="cancha_id" value="<?php echo $cancha["id"]; ?>">
+                                        <input type="hidden" name="hora" value="<?php echo $hora["inicio"]; ?>">
+                                        <input type="hidden" name="reservar" value="1">
+
+                                        <?php if ($isAdmin): ?>
+                                            <input type="hidden" name="usuario_id_asignado" value="">
+                                        <?php endif; ?>
+
+                                        <button type="button" class="reservar-btn" onclick="abrirVentanaFlotante(this)">
+                                            Reservar
+                                        </button>
                                     </form>
                                 <?php else: ?>
                                     No Disponible
@@ -614,14 +655,59 @@ if ($isAdmin) {
     <!-- Ventana flotante de confirmación -->
     <div id="ventanaFlotante" class="ventana-flotante">
         <div class="ventana-flotante-contenido">
-            <h3>Confirmar reserva</h3>
-            <p>¿Estás seguro de que deseas realizar esta reserva?</p>
-            <p id="mensajePago" style="color: red;"></p>  <!-- Aquí se agregará el mensaje adicional si la hora es posterior a las 20:00 -->
+            <?php if ($isAdmin): ?>
+                <h3>Asignar reserva a un usuario</h3>
 
-            <div class="ventana-flotante-acciones">
-                <button id="btnConfirmarReserva" class="btn-confirmar">Sí, reservar</button>
-                <button id="btnCancelarReserva" class="btn-cancelar">Cancelar</button>
-            </div>
+                <div style="max-height: 320px; overflow: auto; text-align: left; border: 1px solid #ccc; border-radius: 8px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="border: 1px solid #ddd; padding: 8px;">Nombre</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">Apellido</th>
+                                <!--
+                                <th style="border: 1px solid #ddd; padding: 8px;">RUT</th>
+                                <th style="border: 1px solid #ddd; padding: 8px;">Email</th>
+                                -->
+                                <th style="border: 1px solid #ddd; padding: 8px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($usuariosParaAsignar as $u): ?>
+                                <tr>
+                                    <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($u["nombre"]); ?></td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($u["apellido"]); ?></td>
+                                    <!--
+                                    <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($u["rut"]); ?></td>
+                                    <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($u["email"]); ?></td>
+                                    -->
+                                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
+                                        <button type="button" class="btn-confirmar"
+                                                onclick="asignarYReservar(<?php echo (int)$u['id']; ?>)">
+                                            Asignar
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p id="mensajePago" style="color: red; margin-top: 10px;"></p>
+
+                <div class="ventana-flotante-acciones" style="margin-top: 12px;">
+                    <button id="btnCancelarReserva" class="btn-cancelar">Cerrar</button>
+                </div>
+
+            <?php else: ?>
+                <h3>Confirmar reserva</h3>
+                <p>¿Estás seguro de que deseas realizar esta reserva?</p>
+                <p id="mensajePago" style="color: red;"></p>
+
+                <div class="ventana-flotante-acciones">
+                    <button id="btnConfirmarReserva" class="btn-confirmar">Sí, reservar</button>
+                    <button id="btnCancelarReserva" class="btn-cancelar">Cancelar</button>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -629,23 +715,15 @@ if ($isAdmin) {
 <script>
 let formularioSeleccionado = null;
 
-// Función para abrir la ventana flotante y mostrar el mensaje si es necesario
 function abrirVentanaFlotante(boton) {
     formularioSeleccionado = boton.closest("form");
-    const horaSeleccionada = formularioSeleccionado.querySelector("input[name='hora']").value;  // Hora seleccionada
+    const horaSeleccionada = formularioSeleccionado.querySelector("input[name='hora']").value;
 
-    // Verificamos si la hora es mayor o igual a las 20:00
-    const horaLimite = '20:00:00';
+    const horaLimite = "20:00:00";
     const mensajePago = (horaSeleccionada >= horaLimite) ? "Recuerda que debes realizar el pago." : "";
 
-    // Mostramos el mensaje adicional si la hora es 20:00 o después
-    if (mensajePago) {
-        document.getElementById("mensajePago").innerText = mensajePago;
-    } else {
-        document.getElementById("mensajePago").innerText = ""; // Limpiamos cualquier mensaje anterior
-    }
+    document.getElementById("mensajePago").innerText = mensajePago;
 
-    // Mostrar la ventana flotante
     document.getElementById("ventanaFlotante").style.display = "flex";
 }
 
@@ -654,11 +732,24 @@ document.getElementById("btnCancelarReserva").addEventListener("click", () => {
     formularioSeleccionado = null;
 });
 
+<?php if (!$isAdmin): ?>
 document.getElementById("btnConfirmarReserva").addEventListener("click", () => {
     if (formularioSeleccionado) {
         formularioSeleccionado.submit();
     }
 });
+<?php endif; ?>
+
+// ✅ Solo admin: asignar usuario y reservar
+function asignarYReservar(usuarioId) {
+    if (!formularioSeleccionado) return;
+
+    const inputAsignado = formularioSeleccionado.querySelector("input[name='usuario_id_asignado']");
+    if (!inputAsignado) return;
+
+    inputAsignado.value = usuarioId;
+    formularioSeleccionado.submit();
+}
 </script>
 
 <script> //Funcion para abrir el menú de hamburguesa
