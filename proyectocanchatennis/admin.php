@@ -109,7 +109,10 @@ $canchas = $pdo->query("SELECT * FROM canchas")->fetchAll(PDO::FETCH_ASSOC);
 
 // Obtener reservas activas
 $reservas = $pdo->query("
-    SELECT r.*, c.nombre as cancha_nombre, u.nombre as usuario_nombre, u.email 
+    SELECT r.*, 
+           c.nombre AS cancha_nombre, 
+           u.nombre AS usuario_nombre,
+           u.apellido AS usuario_apellido
     FROM reservas r 
     JOIN canchas c ON r.cancha_id = c.id 
     JOIN usuarios u ON r.usuario_id = u.id 
@@ -555,8 +558,8 @@ $dias = [
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Usuario</th>
-                        <th>Email</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
                         <th>Cancha</th>
                         <th>Fecha</th>
                         <th>Hora</th>
@@ -569,7 +572,7 @@ $dias = [
                         <tr>
                             <td><?php echo $reserva['id']; ?></td>
                             <td><?php echo $reserva['usuario_nombre']; ?></td>
-                            <td><?php echo $reserva['email']; ?></td>
+                            <td><?php echo htmlspecialchars($reserva['usuario_apellido']); ?></td>
                             <td><?php echo $reserva['cancha_nombre']; ?></td>
                             <td><?php echo date('d/m/Y', strtotime($reserva['fecha'])); ?></td>
                             <td><?php echo date('H:i', strtotime($reserva['hora'])); ?></td>

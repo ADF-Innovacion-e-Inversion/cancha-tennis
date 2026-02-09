@@ -19,6 +19,7 @@ $limiteDiario  = ($planUsuario === 'Familiar') ? 2 : 1;
 $fecha = isset($_GET['fecha']) ? $_GET['fecha'] : date('Y-m-d');
 // Verificar si es domingo
 $esDomingo = (date('w', strtotime($fecha)) == 0); // 0 significa domingo
+$esLunes = (date("N", strtotime($fecha)) == 1); // 1 significa lunes
 
 // Obtener reservas para la fecha seleccionada
 $stmt = $pdo->prepare("
@@ -97,13 +98,27 @@ foreach ($actividadesRec as $ar) {
 // Verificar si el usuario es admin
 $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
 
-//traer lista de usuarios (solo admin)
+// traer lista de usuarios (solo admin) + contador semanal y 24h
 $usuariosParaAsignar = [];
 if ($isAdmin) {
     $stmt = $pdo->query("
-        SELECT id, nombre, apellido, rut, email
-        FROM usuarios
-        ORDER BY nombre ASC, apellido ASC
+        SELECT 
+            u.id,
+            u.nombre,
+            u.apellido,
+            u.plan,
+            COALESCE(SUM(CASE 
+                WHEN r.estado = 'confirmada'
+                 AND YEARWEEK(r.fecha_reserva, 1) = YEARWEEK(CURDATE(), 1)
+                THEN 1 ELSE 0 END), 0) AS totalSemana,
+            COALESCE(SUM(CASE
+                WHEN r.estado = 'confirmada'
+                 AND r.fecha_reserva >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                THEN 1 ELSE 0 END), 0) AS total24h
+        FROM usuarios u
+        LEFT JOIN reservas r ON r.usuario_id = u.id
+        GROUP BY u.id, u.nombre, u.apellido, u.plan
+        ORDER BY u.nombre ASC, u.apellido ASC
     ");
     $usuariosParaAsignar = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -164,39 +179,89 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
     // ✅ ADMIN: no aplicar restricciones (pero sí validar disponibilidad)
     if ($isAdmin) {
 
-        // Verificar si la cancha ya está reservada en ese horario
-        $stmt = $pdo->prepare("
-            SELECT id
-            FROM reservas
-            WHERE cancha_id = ?
-            AND fecha = ?
-            AND hora = ?
-            AND estado = 'confirmada'
-        ");
-        $stmt->execute([$cancha_id, $fecha, $hora]);
+        $usuarioIdFinal = (int)($_POST["usuario_id_asignado"] ?? 0);
 
-        if ($stmt->rowCount() == 0) {
+        if ($usuarioIdFinal <= 0) {
+            $error = "Debes asignar un usuario para realizar la reserva.";
+        } else {
 
+            // Verificar si la cancha ya está reservada en ese horario
             $stmt = $pdo->prepare("
-                INSERT INTO reservas (usuario_id, cancha_id, fecha, hora)
-                VALUES (?, ?, ?, ?)
+                SELECT id
+                FROM reservas
+                WHERE cancha_id = ?
+                AND fecha = ?
+                AND hora = ?
+                AND estado = 'confirmada'
             ");
+            $stmt->execute([$cancha_id, $fecha, $hora]);
 
-            $usuarioIdFinal = (int)($_POST["usuario_id_asignado"] ?? 0);
-
-            if ($usuarioIdFinal <= 0) {
-                $error = "Debes asignar un usuario para realizar la reserva.";
+            if ($stmt->rowCount() != 0) {
+                $error = "La cancha ya está reservada en ese horario";
             } else {
-                if ($stmt->execute([$usuarioIdFinal, $cancha_id, $fecha, $hora])) {
-                    header("Location: index.php?fecha=$fecha&success=1");
-                    exit();
+
+                // Traer plan del usuario asignado
+                $stmt = $pdo->prepare("SELECT plan FROM usuarios WHERE id = ?");
+                $stmt->execute([$usuarioIdFinal]);
+                $planAsignado = $stmt->fetchColumn();
+
+                if (!$planAsignado) {
+                    $error = "Usuario asignado no válido.";
                 } else {
-                    $error = "No se pudo registrar la reserva.";
+
+                    $limiteSemanalU = ($planAsignado === "Familiar") ? 6 : 3;
+                    $limiteDiarioU  = ($planAsignado === "Familiar") ? 2 : 1;
+
+                    // Contar reservas semana del usuario asignado
+                    $stmt = $pdo->prepare("
+                        SELECT COUNT(*)
+                        FROM reservas
+                        WHERE usuario_id = ?
+                        AND estado = 'confirmada'
+                        AND YEARWEEK(fecha_reserva, 1) = YEARWEEK(CURDATE(), 1)
+                    ");
+                    $stmt->execute([$usuarioIdFinal]);
+                    $totalSemanaU = (int)$stmt->fetchColumn();
+
+                    if ($totalSemanaU >= $limiteSemanalU) {
+                        $error = ($planAsignado === "Familiar")
+                            ? "Este usuario (Plan Familiar) ya alcanzó el máximo semanal (6)."
+                            : "Este usuario (Plan Individual) ya alcanzó el máximo semanal (3).";
+                    } else {
+
+                        // Contar reservas últimas 24h del usuario asignado
+                        $stmt = $pdo->prepare("
+                            SELECT COUNT(*)
+                            FROM reservas
+                            WHERE usuario_id = ?
+                            AND estado = 'confirmada'
+                            AND fecha_reserva >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                        ");
+                        $stmt->execute([$usuarioIdFinal]);
+                        $total24hU = (int)$stmt->fetchColumn();
+
+                        if ($total24hU >= $limiteDiarioU) {
+                            $error = ($planAsignado === "Familiar")
+                                ? "Este usuario (Plan Familiar) ya alcanzó el límite de 24h (2)."
+                                : "Este usuario (Plan Individual) ya alcanzó el límite de 24h (1).";
+                        } else {
+
+                            // Insertar reserva para el usuario asignado
+                            $stmt = $pdo->prepare("
+                                INSERT INTO reservas (usuario_id, cancha_id, fecha, hora)
+                                VALUES (?, ?, ?, ?)
+                            ");
+
+                            if ($stmt->execute([$usuarioIdFinal, $cancha_id, $fecha, $hora])) {
+                                header("Location: index.php?fecha=$fecha&success=1");
+                                exit();
+                            } else {
+                                $error = "No se pudo registrar la reserva.";
+                            }
+                        }
+                    }
                 }
             }
-
-        } else {
-            $error = "La cancha ya está reservada en ese horario";
         }
     } else {
 
@@ -699,8 +764,24 @@ if ($isAdmin) {
                         </td>
                         <?php foreach ($canchas as $cancha): ?>
                             <?php 
-                            // Verificar si es domingo y si la hora es posterior a las 11:00
-                            $esHoraNoDisponible = ($esDomingo && strtotime($hora["inicio"]) > strtotime("11:00:00"));
+                            // Verificar si es domingo y si la hora es posterior a las 11:00 y si es lunes entre las 07:00 y las 10:30
+                            $esHoraNoDisponibleDomingo = ($esDomingo && strtotime($hora["inicio"]) > strtotime("11:00:00"));
+
+                            // ✅ Lunes: bloquear el bloque 07:00–10:30
+                            $esHoraNoDisponibleLunes = ($esLunes && strtotime($hora["inicio"]) < strtotime("11:00:00"));
+
+                            // ✅ Bloquear horas pasadas SOLO si la fecha seleccionada es hoy
+                            $esHoy = ($fecha === date("Y-m-d"));
+
+                            $inicioBloque = strtotime($fecha . " " . $hora["inicio"]);
+                            $ahora = time();
+
+                            // Regla asumida: si el bloque ya comenzó, no se puede reservar
+                            $esHoraPasada = ($esHoy && $inicioBloque <= $ahora);
+
+                            // ✅ Si se cumple cualquiera de las reglas, queda "No disponible"
+                            $esHoraNoDisponible = ($esHoraNoDisponibleDomingo || $esHoraNoDisponibleLunes || $esHoraPasada);
+
                             $hayReserva = isset($reservas_organizadas[$cancha["id"]][$hora["inicio"]]);
                             $hayActividad = isset($ocupadoPorActividad[$cancha["id"]][$hora["inicio"]]);
                             $estaOcupado = ($hayReserva || $hayActividad);
@@ -711,7 +792,7 @@ if ($isAdmin) {
                                     : ($esHoraNoDisponible ? "no-disponible" : ($cancha["estado"] == "disponible" ? "disponible" : "ocupada"));
                             ?>">
                                 <?php if ($esHoraNoDisponible): ?>
-                                    No disponible
+                                    <?php echo $esHoraNoDisponibleLunes ? "En mantenimiento" : "No disponible"; ?>
                                 <?php elseif ($estaOcupado): ?>
                                     Ocupada
                                 <?php elseif ($cancha["estado"] == "disponible"): ?>
@@ -765,11 +846,22 @@ if ($isAdmin) {
                                 <th style="border: 1px solid #ddd; padding: 8px;">RUT</th>
                                 <th style="border: 1px solid #ddd; padding: 8px;">Email</th>
                                 -->
+                                <th style="border: 1px solid #ddd; padding: 8px;">Disponibles</th>
                                 <th style="border: 1px solid #ddd; padding: 8px;">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($usuariosParaAsignar as $u): ?>
+                                <?php
+                                $limiteSemanalU = ($u["plan"] === "Familiar") ? 6 : 3;
+                                $limiteDiarioU  = ($u["plan"] === "Familiar") ? 2 : 1;
+
+                                $dispSemana = max(0, $limiteSemanalU - (int)$u["totalSemana"]);
+                                $disp24h    = max(0, $limiteDiarioU - (int)$u["total24h"]);
+
+                                $textoDisponibles = $disp24h . " reservas";
+                                $sinCupo = ($disp24h <= 0);
+                                ?>
                                 <tr>
                                     <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($u["nombre"]); ?></td>
                                     <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($u["apellido"]); ?></td>
@@ -777,8 +869,13 @@ if ($isAdmin) {
                                     <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($u["rut"]); ?></td>
                                     <td style="border: 1px solid #ddd; padding: 8px;"><?php echo htmlspecialchars($u["email"]); ?></td>
                                     -->
+                                    <td style="border: 1px solid #ddd; padding: 8px;">
+                                        <?php echo htmlspecialchars($textoDisponibles); ?>
+                                    </td>
                                     <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
                                         <button type="button" class="btn-confirmar"
+                                                <?php echo $sinCupo ? "disabled" : ""; ?>
+                                                style="<?php echo $sinCupo ? "opacity:0.5; cursor:not-allowed;" : ""; ?>"
                                                 onclick="asignarYReservar(<?php echo (int)$u['id']; ?>)">
                                             Asignar
                                         </button>
