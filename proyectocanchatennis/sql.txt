@@ -52,3 +52,32 @@ INSERT INTO canchas (nombre, estado) VALUES
 INSERT INTO usuarios (nombre, email, password, tipo, rut) VALUES 
 ('Administrador', 'admin@tenis.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', '20000000-0');
 -- Contraseña: password
+
+CREATE TABLE actividades_rec (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+
+    grupo_id CHAR(32) NOT NULL,
+
+    cancha_id INT NOT NULL,
+
+    -- 1=Lun ... 7=Dom
+    dia_desde TINYINT NOT NULL,
+    dia_hasta TINYINT NOT NULL,
+
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+
+    nombre VARCHAR(120) NOT NULL,
+
+    estado ENUM('activa','cancelada') NOT NULL DEFAULT 'activa',
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX idx_rec_cancha_estado (cancha_id, estado),
+    INDEX idx_rec_grupo (grupo_id),
+
+    CONSTRAINT fk_actividades_rec_cancha
+        FOREIGN KEY (cancha_id) REFERENCES canchas(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+);

@@ -41,6 +41,59 @@ foreach ($reservas as $reserva) {
 $canchas = $pdo->query("SELECT * FROM canchas")->fetchAll(PDO::FETCH_ASSOC);
 $horas = getHorasDisponibles();
 
+// -------------------------
+// ACTIVIDADES RECURRENTES (OCUPADO AL MOSTRAR)
+// -------------------------
+
+function actividadAplicaADia($dow, $desde, $hasta) {
+    // $dow: 1=Lun..7=Dom
+    // rango normal: 2..4 (Mar..Jue)
+    if ($desde <= $hasta) {
+        return ($dow >= $desde && $dow <= $hasta);
+    }
+    // rango que cruza semana: 6..2 (Sáb..Mar)
+    return ($dow >= $desde || $dow <= $hasta);
+}
+
+function solapaRangoHora($bloqueInicio, $bloqueFin, $actInicio, $actFin) {
+    // solapa si NO se cumple: (bloqueFin <= actInicio) OR (bloqueInicio >= actFin)
+    return !(strtotime($bloqueFin) <= strtotime($actInicio) || strtotime($bloqueInicio) >= strtotime($actFin));
+}
+
+$dowSeleccionado = (int)date("N", strtotime($fecha)); // 1..7
+
+// Traer actividades recurrentes activas (todas o solo las canchas existentes)
+$stmt = $pdo->prepare("
+    SELECT grupo_id, cancha_id, dia_desde, dia_hasta, hora_inicio, hora_fin, nombre
+    FROM actividades_rec
+    WHERE estado = 'activa'
+");
+$stmt->execute();
+$actividadesRec = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Mapa: $ocupadoPorActividad[cancha_id][hora_inicio_del_bloque] = true
+$ocupadoPorActividad = [];
+
+foreach ($actividadesRec as $ar) {
+    $canchaAct = (int)$ar["cancha_id"];
+    $desde = (int)$ar["dia_desde"];
+    $hasta = (int)$ar["dia_hasta"];
+
+    if (!actividadAplicaADia($dowSeleccionado, $desde, $hasta)) {
+        continue;
+    }
+
+    foreach ($horas as $bloque) {
+        $bIni = $bloque["inicio"];
+        $bFin = $bloque["fin"];
+
+        if (solapaRangoHora($bIni, $bFin, $ar["hora_inicio"], $ar["hora_fin"])) {
+            $ocupadoPorActividad[$canchaAct][$bIni] = true;
+        }
+    }
+}
+
+
 // Verificar si el usuario es admin
 $isAdmin = isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin';
 
@@ -55,6 +108,38 @@ if ($isAdmin) {
     $usuariosParaAsignar = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
+function bloqueOcupadoPorActividad($pdo, $fecha, $canchaId, $bloqueInicio) {
+    $dow = (int)date("N", strtotime($fecha));
+    $bloque = obtenerBloqueHora($bloqueInicio);
+    if (!$bloque) return true; // si no existe el bloque, lo tratamos como no reservable
+
+    $bIni = $bloque["inicio"];
+    $bFin = $bloque["fin"];
+
+    $stmt = $pdo->prepare("
+        SELECT dia_desde, dia_hasta, hora_inicio, hora_fin
+        FROM actividades_rec
+        WHERE estado = 'activa' AND cancha_id = ?
+    ");
+    $stmt->execute([(int)$canchaId]);
+    $acts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($acts as $ar) {
+        $desde = (int)$ar["dia_desde"];
+        $hasta = (int)$ar["dia_hasta"];
+
+        $aplica = ($desde <= $hasta)
+            ? ($dow >= $desde && $dow <= $hasta)
+            : ($dow >= $desde || $dow <= $hasta);
+
+        if (!$aplica) continue;
+
+        $solapa = !(strtotime($bFin) <= strtotime($ar["hora_inicio"]) || strtotime($bIni) >= strtotime($ar["hora_fin"]));
+        if ($solapa) return true;
+    }
+    return false;
+}
+
 // Procesar nueva reserva al presionar el botón
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
     $cancha_id = $_POST["cancha_id"];
@@ -64,6 +149,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
     $horaReserva = new DateTime($hora);
     $horaLimite = new DateTime("20:00:00");
     $esTarde = $horaReserva >= $horaLimite;
+
+    if (bloqueOcupadoPorActividad($pdo, $fecha, $cancha_id, $hora)) {
+    $error = "Ese horario está ocupado por una actividad recurrente.";
+    }
 
     // Si la hora es 20:00 o después, añadir el mensaje especial
     if ($esTarde) {
@@ -612,13 +701,21 @@ if ($isAdmin) {
                             <?php 
                             // Verificar si es domingo y si la hora es posterior a las 11:00
                             $esHoraNoDisponible = ($esDomingo && strtotime($hora["inicio"]) > strtotime("11:00:00"));
+                            $hayReserva = isset($reservas_organizadas[$cancha["id"]][$hora["inicio"]]);
+                            $hayActividad = isset($ocupadoPorActividad[$cancha["id"]][$hora["inicio"]]);
+                            $estaOcupado = ($hayReserva || $hayActividad);
                             ?>
-                            <td class="<?php echo isset($reservas_organizadas[$cancha['id']][$hora["inicio"]]) ? 'ocupada' : ($esHoraNoDisponible ? 'no-disponible' : ($cancha['estado'] == 'disponible' ? 'disponible' : 'ocupada')); ?>">
+                            <td class="<?php
+                                echo $estaOcupado
+                                    ? "ocupada"
+                                    : ($esHoraNoDisponible ? "no-disponible" : ($cancha["estado"] == "disponible" ? "disponible" : "ocupada"));
+                            ?>">
                                 <?php if ($esHoraNoDisponible): ?>
                                     No disponible
-                                <?php elseif (isset($reservas_organizadas[$cancha['id']][$hora["inicio"]])): ?>
+                                <?php elseif ($estaOcupado): ?>
                                     Ocupada
-                                <?php elseif ($cancha['estado'] == 'disponible'): ?>
+                                <?php elseif ($cancha["estado"] == "disponible"): ?>
+                                    <!-- tu form Reservar tal cual -->
                                     <form method="POST" style="margin: 0;">
                                         <input type="hidden" name="cancha_id" value="<?php echo $cancha["id"]; ?>">
                                         <input type="hidden" name="hora" value="<?php echo $hora["inicio"]; ?>">

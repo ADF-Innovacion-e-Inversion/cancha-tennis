@@ -27,6 +27,83 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
     exit();
 }
 
+// Procesar creación de actividad (por rango de días, crea un grupo)
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["crear_actividad"])) {
+    $canchaId = (int)($_POST["cancha_id"] ?? 0);
+    $diaDesde = (int)($_POST["dia_desde"] ?? 0);
+    $diaHasta = (int)($_POST["dia_hasta"] ?? 0);
+
+    $horaInicio = $_POST["hora_inicio"] ?? "";
+    $horaFin = $_POST["hora_fin"] ?? "";
+    $nombreActividad = trim($_POST["nombre"] ?? "");
+
+    if (
+        $canchaId <= 0 ||
+        $diaDesde < 1 || $diaDesde > 7 ||
+        $diaHasta < 1 || $diaHasta > 7 ||
+        $horaInicio === "" || $horaFin === "" ||
+        $nombreActividad === ""
+    ) {
+        header("Location: admin.php?error=actividad_invalida");
+        exit();
+    }
+
+    if (strtotime($horaFin) <= strtotime($horaInicio)) {
+        header("Location: admin.php?error=actividad_rango");
+        exit();
+    }
+
+    $grupoId = bin2hex(random_bytes(16));
+
+    $stmtInsert = $pdo->prepare("
+        INSERT INTO actividades_rec (grupo_id, cancha_id, dia_desde, dia_hasta, hora_inicio, hora_fin, nombre, estado)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'activa')
+    ");
+    $stmtInsert->execute([$grupoId, $canchaId, $diaDesde, $diaHasta, $horaInicio, $horaFin, $nombreActividad]);
+
+    header("Location: admin.php?success=3");
+    exit();
+}
+
+// Procesar cancelación de actividad (cancela todo el grupo)
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_actividad"])) {
+    $grupoId = $_POST["grupo_id"] ?? "";
+
+    if ($grupoId === "") {
+        header("Location: admin.php?error=cancelar_invalido");
+        exit();
+    }
+
+    $stmt = $pdo->prepare("
+        UPDATE actividades_rec
+        SET estado = 'cancelada'
+        WHERE grupo_id = ?
+          AND estado = 'activa'
+    ");
+    $stmt->execute([$grupoId]);
+
+    header("Location: admin.php?success=4");
+    exit();
+}
+
+// Obtener actividades activas
+$actividades = $pdo->query("
+    SELECT 
+        ar.grupo_id,
+        ar.cancha_id,
+        c.nombre AS cancha_nombre,
+        ar.dia_desde,
+        ar.dia_hasta,
+        ar.hora_inicio,
+        ar.hora_fin,
+        ar.nombre,
+        ar.created_at
+    FROM actividades_rec ar
+    JOIN canchas c ON c.id = ar.cancha_id
+    WHERE ar.estado = 'activa'
+    ORDER BY ar.cancha_id, ar.dia_desde, ar.hora_inicio
+")->fetchAll(PDO::FETCH_ASSOC);
+
 // Obtener canchas
 $canchas = $pdo->query("SELECT * FROM canchas")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -39,6 +116,16 @@ $reservas = $pdo->query("
     WHERE r.estado = 'confirmada' 
     ORDER BY r.fecha, r.hora
 ")->fetchAll(PDO::FETCH_ASSOC);
+
+$dias = [
+    1 => "Lunes",
+    2 => "Martes",
+    3 => "Miércoles",
+    4 => "Jueves",
+    5 => "Viernes",
+    6 => "Sábado",
+    7 => "Domingo"
+];
 ?>
 
 <!DOCTYPE html>
@@ -166,6 +253,31 @@ $reservas = $pdo->query("
             white-space: nowrap;
         }
 
+        .ventana-flotante {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .ventana-flotante-contenido {
+            background: #ffffff;
+            padding: 25px 30px;
+            border-radius: 10px;
+            width: 360px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+
+        .ventana-flotante-acciones {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
         @media (max-width: 768px) {
             .form-inline {
                 display: flex;
@@ -196,6 +308,18 @@ $reservas = $pdo->query("
 
             .hamburger {
                 display: block;
+            }
+
+            .ventana-flotante { 
+                padding-left: 16px; 
+                padding-right: 16px; 
+                box-sizing: border-box; 
+            }
+
+            .ventana-flotante-contenido { 
+                width: 100%; 
+                max-width: 340px; 
+                box-sizing: border-box; 
             }
         }
 
@@ -256,6 +380,8 @@ $reservas = $pdo->query("
                 <?php 
                 if ($_GET['success'] == 1) echo "Estado de cancha actualizado correctamente";
                 if ($_GET['success'] == 2) echo "Reserva cancelada correctamente";
+                if ($_GET["success"] == 3) echo "Actividad creada correctamente";
+                if ($_GET["success"] == 4) echo "Actividad cancelada correctamente";
                 ?>
             </div>
         <?php endif; ?>
@@ -297,6 +423,128 @@ $reservas = $pdo->query("
                             </td>
                         </tr>
                     <?php endforeach; ?>
+                </tbody>
+            </table>
+            <button type="button" class="btn btn-primary" onclick="abrirModalActividad()">
+                Crear Actividad
+            </button>
+        </div>
+
+        <div id="modalActividad" class="ventana-flotante">
+            <div class="ventana-flotante-contenido">
+                <h3>Crear Actividad</h3>
+
+                <form method="POST" style="text-align:left;">
+                    <input type="hidden" name="crear_actividad" value="1">
+
+                    <label style="display:block; margin-top:10px;">Cancha</label>
+                    <select name="cancha_id" required style="width:100%; padding:8px;">
+                        <?php foreach ($canchas as $c): ?>
+                            <option value="<?php echo (int)$c["id"]; ?>">
+                                <?php echo htmlspecialchars($c["nombre"]); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <label style="display:block; margin-top:10px;">Desde (día)</label>
+                    <select name="dia_desde" required style="width:100%; padding:8px;">
+                        <option value="1">Lunes</option>
+                        <option value="2">Martes</option>
+                        <option value="3">Miércoles</option>
+                        <option value="4">Jueves</option>
+                        <option value="5">Viernes</option>
+                        <option value="6">Sábado</option>
+                        <option value="7">Domingo</option>
+                    </select>
+
+                    <label style="display:block; margin-top:10px;">Hasta (día)</label>
+                    <select name="dia_hasta" required style="width:100%; padding:8px;">
+                        <option value="1">Lunes</option>
+                        <option value="2">Martes</option>
+                        <option value="3">Miércoles</option>
+                        <option value="4">Jueves</option>
+                        <option value="5">Viernes</option>
+                        <option value="6">Sábado</option>
+                        <option value="7">Domingo</option>
+                    </select>
+
+                    <label style="display:block; margin-top:10px;">Hora inicio</label>
+                    <select name="hora_inicio" required style="width:100%; padding:8px;">
+                        <?php foreach (getHorasDisponibles() as $b): ?>
+                            <option value="<?php echo $b["inicio"]; ?>">
+                                <?php echo date("H:i", strtotime($b["inicio"])); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <label style="display:block; margin-top:10px;">Hora fin</label>
+                    <select name="hora_fin" required style="width:100%; padding:8px;">
+                        <?php foreach (getHorasDisponibles() as $b): ?>
+                            <option value="<?php echo $b["fin"]; ?>">
+                                <?php echo date("H:i", strtotime($b["fin"])); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+                    <label style="display:block; margin-top:10px;">Nombre de la actividad</label>
+                    <input type="text" name="nombre" required maxlength="120" style="width:100%; padding:8px;">
+
+                    <div class="ventana-flotante-acciones" style="margin-top: 15px;">
+                        <button type="submit" class="btn btn-primary">Crear</button>
+                        <button type="button" class="btn btn-danger" onclick="cerrarModalActividad()">Cerrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Actividades Activas</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cancha</th>
+                        <th>Desde</th>
+                        <th>Hasta</th>
+                        <th>Hora inicio</th>
+                        <th>Hora fin</th>
+                        <th>Nombre</th>
+                        <th>Fecha creación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (count($actividades) === 0): ?>
+                        <tr>
+                            <td colspan="8">No hay actividades activas.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($actividades as $a): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($a["cancha_nombre"]); ?></td>
+
+                                <!-- Desde (día) -->
+                                <td><?php echo $dias[(int)$a["dia_desde"]] ?? "—"; ?></td>
+
+                                <!-- Hasta (día) -->
+                                <td><?php echo $dias[(int)$a["dia_hasta"]] ?? "—"; ?></td>
+
+                                <td><?php echo date("H:i", strtotime($a["hora_inicio"])); ?></td>
+                                <td><?php echo date("H:i", strtotime($a["hora_fin"])); ?></td>
+                                <td><?php echo htmlspecialchars($a["nombre"]); ?></td>
+                                <td><?php echo date("d/m/Y H:i", strtotime($a["created_at"])); ?></td>
+
+                                <td>
+                                    <form method="POST" class="form-inline">
+                                        <input type="hidden" name="grupo_id" value="<?php echo htmlspecialchars($a["grupo_id"]); ?>">
+                                        <button type="submit" name="cancelar_actividad" class="btn btn-danger"
+                                                onclick="return confirm('¿Cancelar esta actividad recurrente?')">
+                                            Cancelar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
@@ -348,6 +596,15 @@ $reservas = $pdo->query("
 function toggleMenu() {
     document.getElementById("navMenu").classList.toggle("show");
 }
+
+function abrirModalActividad() {
+    document.getElementById("modalActividad").style.display = "flex";
+}
+
+function cerrarModalActividad() {
+    document.getElementById("modalActividad").style.display = "none";
+}
+
 </script>
 
 </body>
