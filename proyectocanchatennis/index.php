@@ -764,39 +764,36 @@ if ($isAdmin) {
                         </td>
                         <?php foreach ($canchas as $cancha): ?>
                             <?php 
-                            // Verificar si es domingo y si la hora es posterior a las 11:00 y si es lunes entre las 07:00 y las 10:30
+                            // 1) ¿Hay reserva / actividad? (definir primero)
+                            $hayReserva   = isset($reservas_organizadas[$cancha["id"]][$hora["inicio"]]);
+                            $hayActividad = isset($ocupadoPorActividad[$cancha["id"]][$hora["inicio"]]);
+                            $estaOcupado  = ($hayReserva || $hayActividad);
+
+                            // 2) Reglas de domingo / lunes
                             $esHoraNoDisponibleDomingo = ($esDomingo && strtotime($hora["inicio"]) > strtotime("11:00:00"));
+                            $esHoraNoDisponibleLunes   = ($esLunes && strtotime($hora["inicio"]) < strtotime("11:00:00"));
 
-                            // ✅ Lunes: bloquear el bloque 07:00–10:30
-                            $esHoraNoDisponibleLunes = ($esLunes && strtotime($hora["inicio"]) < strtotime("11:00:00"));
-
-                            // ✅ Bloquear horas pasadas SOLO si la fecha seleccionada es hoy
+                            // 3) Hora pasada SOLO si es hoy y SOLO si NO está ocupado
                             $esHoy = ($fecha === date("Y-m-d"));
-
                             $inicioBloque = strtotime($fecha . " " . $hora["inicio"]);
                             $ahora = time();
 
-                            // Regla asumida: si el bloque ya comenzó, no se puede reservar
-                            $esHoraPasada = ($esHoy && $inicioBloque <= $ahora);
+                            $esHoraPasada = ($esHoy && $inicioBloque <= $ahora && !$estaOcupado);
 
-                            // ✅ Si se cumple cualquiera de las reglas, queda "No disponible"
+                            // 4) Regla final "no disponible"
                             $esHoraNoDisponible = ($esHoraNoDisponibleDomingo || $esHoraNoDisponibleLunes || $esHoraPasada);
-
-                            $hayReserva = isset($reservas_organizadas[$cancha["id"]][$hora["inicio"]]);
-                            $hayActividad = isset($ocupadoPorActividad[$cancha["id"]][$hora["inicio"]]);
-                            $estaOcupado = ($hayReserva || $hayActividad);
+                            
                             ?>
                             <td class="<?php
                                 echo $estaOcupado
                                     ? "ocupada"
                                     : ($esHoraNoDisponible ? "no-disponible" : ($cancha["estado"] == "disponible" ? "disponible" : "ocupada"));
                             ?>">
-                                <?php if ($esHoraNoDisponible): ?>
-                                    <?php echo $esHoraNoDisponibleLunes ? "En mantenimiento" : "No disponible"; ?>
-                                <?php elseif ($estaOcupado): ?>
+                                <?php if ($estaOcupado): ?>
                                     Ocupada
+                                <?php elseif ($esHoraNoDisponible): ?>
+                                    <?php echo $esHoraNoDisponibleLunes ? "En mantenimiento" : "No disponible"; ?>
                                 <?php elseif ($cancha["estado"] == "disponible"): ?>
-                                    <!-- tu form Reservar tal cual -->
                                     <form method="POST" style="margin: 0;">
                                         <input type="hidden" name="cancha_id" value="<?php echo $cancha["id"]; ?>">
                                         <input type="hidden" name="hora" value="<?php echo $hora["inicio"]; ?>">

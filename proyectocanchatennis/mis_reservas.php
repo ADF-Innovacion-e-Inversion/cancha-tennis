@@ -13,7 +13,9 @@ $stmt = $pdo->prepare("
     SELECT r.*, c.nombre as cancha_nombre 
     FROM reservas r 
     JOIN canchas c ON r.cancha_id = c.id 
-    WHERE r.usuario_id = ? AND r.estado = 'confirmada' 
+    WHERE r.usuario_id = ?
+      AND r.estado = 'confirmada'
+      AND r.fecha >= CURDATE()
     ORDER BY r.fecha, r.hora, r.cancha_id
 ");
 $stmt->execute([$_SESSION['user_id']]);
@@ -23,7 +25,7 @@ $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) {
     $reserva_id = (int)($_POST["reserva_id"] ?? 0);
 
-    // Traer la reserva del usuario, confirmada
+    // 1) Traer SOLO la reserva que se quiere cancelar
     $stmt = $pdo->prepare("
         SELECT fecha, hora
         FROM reservas
@@ -38,18 +40,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
     if (!$reserva) {
         $error = "No se encontró la reserva o ya no está activa.";
     } else {
-        // Inicio del bloque reservado (fecha + hora inicio)
+        // 2) Validar 3 horas de anticipación
         $inicioReserva = new DateTime($reserva["fecha"] . " " . $reserva["hora"]);
         $ahora = new DateTime();
 
         $segundosRestantes = $inicioReserva->getTimestamp() - $ahora->getTimestamp();
 
-        // 3 horas = 10800 segundos
         if ($segundosRestantes <= 0) {
             $error = "No puedes cancelar una reserva que ya comenzó o ya pasó.";
         } elseif ($segundosRestantes < 10800) {
             $error = "Solo puedes cancelar con un mínimo de 3 horas de anticipación.";
         } else {
+            // 3) Cancelar
             $stmt = $pdo->prepare("
                 UPDATE reservas
                 SET estado = 'cancelada'
@@ -57,6 +59,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
                   AND usuario_id = ?
                   AND estado = 'confirmada'
             ");
+
             if ($stmt->execute([$reserva_id, $_SESSION["user_id"]])) {
                 header("Location: mis_reservas.php?success=1");
                 exit();
@@ -66,17 +69,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
         }
     }
 
-    // Recargar reservas para que la tabla se actualice tras POST sin redirect (si hubo error)
+    // 4) Recargar tabla (si hubo error), manteniendo el filtro desde hoy
     $stmt = $pdo->prepare("
         SELECT r.*, c.nombre as cancha_nombre
         FROM reservas r
         JOIN canchas c ON r.cancha_id = c.id
-        WHERE r.usuario_id = ? AND r.estado = 'confirmada'
+        WHERE r.usuario_id = ?
+          AND r.estado = 'confirmada'
+          AND r.fecha >= CURDATE()
         ORDER BY r.fecha, r.hora, r.cancha_id
     ");
     $stmt->execute([$_SESSION["user_id"]]);
     $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+
 ?>
 
 <!DOCTYPE html>

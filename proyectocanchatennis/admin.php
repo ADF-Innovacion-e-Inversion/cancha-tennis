@@ -108,17 +108,20 @@ $actividades = $pdo->query("
 $canchas = $pdo->query("SELECT * FROM canchas")->fetchAll(PDO::FETCH_ASSOC);
 
 // Obtener reservas activas
-$reservas = $pdo->query("
+$stmt = $pdo->prepare("
     SELECT r.*, 
            c.nombre AS cancha_nombre, 
            u.nombre AS usuario_nombre,
            u.apellido AS usuario_apellido
-    FROM reservas r 
-    JOIN canchas c ON r.cancha_id = c.id 
-    JOIN usuarios u ON r.usuario_id = u.id 
-    WHERE r.estado = 'confirmada' 
+    FROM reservas r
+    JOIN canchas c ON r.cancha_id = c.id
+    JOIN usuarios u ON r.usuario_id = u.id
+    WHERE r.estado = 'confirmada'
+      AND r.fecha >= CURDATE()
     ORDER BY r.fecha, r.hora
-")->fetchAll(PDO::FETCH_ASSOC);
+");
+$stmt->execute();
+$reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $dias = [
     1 => "Lunes",
