@@ -61,6 +61,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
             ");
 
             if ($stmt->execute([$reserva_id, $_SESSION["user_id"]])) {
+
+                // ✅ Eliminar comprobante del disco
+                eliminarComprobanteDeReserva($reserva_id);
+
                 header("Location: mis_reservas.php?success=1");
                 exit();
             } else {
@@ -114,6 +118,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
         .error { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px; margin-bottom: 15px; }
         .btn { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; text-decoration: none; display: inline-block; }
         .btn-danger { background: #dc3545; color: white; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-primary:hover {opacity: 0.5;}
+
+
+        
         .section {
             margin-bottom: 30px;
             width: 100%;
@@ -276,6 +285,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
                             <th>Fecha</th>
                             <th>Hora</th>
                             <th>Fecha de Reserva</th>
+                            <th>Comprobante</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -295,6 +305,35 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
                                     <?php endif; ?>
                                 </td>
                                 <td><?php echo date('d/m/Y H:i', strtotime($reserva['fecha_reserva'])); ?></td>
+                                <td>
+                                    <?php
+                                    $reservaId = (int)$reserva["id"];
+
+                                    $baseDir = __DIR__ . "/comprobantes/";
+                                    $baseUrl = "comprobantes/";
+
+                                    $candidatos = [
+                                        $baseDir . "reserva_" . $reservaId . ".jpg",
+                                        $baseDir . "reserva_" . $reservaId . ".png",
+                                        $baseDir . "reserva_" . $reservaId . ".webp",
+                                        $baseDir . "reserva_" . $reservaId . ".jpeg"
+                                    ];
+
+                                    $archivoEncontrado = "";
+                                    foreach ($candidatos as $path) {
+                                        if (file_exists($path)) {
+                                            $archivoEncontrado = basename($path);
+                                            break;
+                                        }
+                                    }
+
+                                    if ($archivoEncontrado !== "") {
+                                        echo "<a class=\"btn btn-primary\" href=\"" . $baseUrl . htmlspecialchars($archivoEncontrado) . "\" target=\"_blank\">Ver</a>";
+                                    } else {
+                                        echo "—";
+                                    }
+                                    ?>
+                                </td>
                                 <td>
                                     <form method="POST">
                                         <input type="hidden" name="reserva_id" value="<?php echo $reserva['id']; ?>">

@@ -22,7 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
     $reserva_id = $_POST['reserva_id'];
     
     $stmt = $pdo->prepare("UPDATE reservas SET estado = 'cancelada' WHERE id = ?");
-    $stmt->execute([$reserva_id]);
+    if ($stmt->execute([$reserva_id])) {
+        // ✅ Eliminar comprobante del disco
+        eliminarComprobanteDeReserva($reserva_id);
+    }
     header('Location: admin.php?success=2');
     exit();
 }
@@ -122,6 +125,21 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute();
 $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Obtener historial de reservas (todas las confirmadas, sin importar fecha)
+$stmt = $pdo->prepare("
+    SELECT r.*, 
+           c.nombre AS cancha_nombre, 
+           u.nombre AS usuario_nombre,
+           u.apellido AS usuario_apellido
+    FROM reservas r
+    JOIN canchas c ON r.cancha_id = c.id
+    JOIN usuarios u ON r.usuario_id = u.id
+    WHERE r.estado = 'confirmada'
+    ORDER BY r.fecha DESC, r.hora DESC
+");
+$stmt->execute();
+$reservasHistorial = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $dias = [
     1 => "Lunes",
@@ -567,6 +585,7 @@ $dias = [
                         <th>Fecha</th>
                         <th>Hora</th>
                         <th>Fecha Reserva</th>
+                        <th>Comprobante</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -581,6 +600,35 @@ $dias = [
                             <td><?php echo date('H:i', strtotime($reserva['hora'])); ?></td>
                             <td><?php echo date('d/m/Y H:i', strtotime($reserva['fecha_reserva'])); ?></td>
                             <td>
+                                <?php
+                                $reservaId = (int)$reserva["id"];
+
+                                $baseDir = __DIR__ . "/comprobantes/";
+                                $baseUrl = "comprobantes/";
+
+                                $candidatos = [
+                                    $baseDir . "reserva_" . $reservaId . ".jpg",
+                                    $baseDir . "reserva_" . $reservaId . ".png",
+                                    $baseDir . "reserva_" . $reservaId . ".webp",
+                                    $baseDir . "reserva_" . $reservaId . ".jpeg"
+                                ];
+
+                                $archivoEncontrado = "";
+                                foreach ($candidatos as $path) {
+                                    if (file_exists($path)) {
+                                        $archivoEncontrado = basename($path);
+                                        break;
+                                    }
+                                }
+
+                                if ($archivoEncontrado !== "") {
+                                    echo "<a class=\"btn btn-primary\" href=\"" . $baseUrl . htmlspecialchars($archivoEncontrado) . "\" target=\"_blank\">Ver</a>";
+                                } else {
+                                    echo "—";
+                                }
+                                ?>
+                            </td>
+                            <td>
                                 <form method="POST" class="form-inline">
                                     <input type="hidden" name="reserva_id" value="<?php echo $reserva['id']; ?>">
                                     <button type="submit" name="cancelar_reserva" class="btn btn-danger" 
@@ -591,6 +639,71 @@ $dias = [
                             </td>
                         </tr>
                     <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Historial de Reservas</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Cancha</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Fecha Reserva</th>
+                        <th>Comprobante</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (count($reservasHistorial) === 0): ?>
+                        <tr>
+                            <td colspan="8">No hay reservas registradas.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($reservasHistorial as $reserva): ?>
+                            <tr>
+                                <td><?php echo $reserva['id']; ?></td>
+                                <td><?php echo htmlspecialchars($reserva['usuario_nombre']); ?></td>
+                                <td><?php echo htmlspecialchars($reserva['usuario_apellido']); ?></td>
+                                <td><?php echo htmlspecialchars($reserva['cancha_nombre']); ?></td>
+                                <td><?php echo date('d/m/Y', strtotime($reserva['fecha'])); ?></td>
+                                <td><?php echo date('H:i', strtotime($reserva['hora'])); ?></td>
+                                <td><?php echo date('d/m/Y H:i', strtotime($reserva['fecha_reserva'])); ?></td>
+                                <td>
+                                    <?php
+                                    $reservaId = (int)$reserva["id"];
+                                    $baseDir = __DIR__ . "/comprobantes/";
+                                    $baseUrl = "comprobantes/";
+
+                                    $candidatos = [
+                                        $baseDir . "reserva_" . $reservaId . ".jpg",
+                                        $baseDir . "reserva_" . $reservaId . ".png",
+                                        $baseDir . "reserva_" . $reservaId . ".webp",
+                                        $baseDir . "reserva_" . $reservaId . ".jpeg"
+                                    ];
+
+                                    $archivoEncontrado = "";
+                                    foreach ($candidatos as $path) {
+                                        if (file_exists($path)) {
+                                            $archivoEncontrado = basename($path);
+                                            break;
+                                        }
+                                    }
+
+                                    if ($archivoEncontrado !== "") {
+                                        echo "<a class=\"btn btn-primary\" href=\"" . $baseUrl . htmlspecialchars($archivoEncontrado) . "\" target=\"_blank\">Ver</a>";
+                                    } else {
+                                        echo "—";
+                                    }
+                                    ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>

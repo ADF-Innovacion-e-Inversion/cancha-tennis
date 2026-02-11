@@ -65,4 +65,18 @@ function obtenerBloqueHora($horaInicio) {
     }
     return null;
 }
+
+function eliminarComprobanteDeReserva(int $reservaId): void {
+    $dir = __DIR__ . "/comprobantes";
+    if (!is_dir($dir)) return;
+
+    // Busca cualquier extensión común (si no guardas la extensión en BD)
+    $patron = $dir . "/reserva_" . $reservaId . ".*";
+    foreach (glob($patron) as $archivo) {
+        if (is_file($archivo)) {
+            @unlink($archivo);
+        }
+    }
+}
+
 ?>

@@ -342,26 +342,98 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
 
                 } else {
 
-                    // Verificar si la cancha está disponible (no reservada)
+                    // ✅ (SOCIO) Verificar si la cancha está disponible (no reservada)
                     $stmt = $pdo->prepare("
                         SELECT id
                         FROM reservas
                         WHERE cancha_id = ?
-                          AND fecha = ?
-                          AND hora = ?
-                          AND estado = 'confirmada'
+                        AND fecha = ?
+                        AND hora = ?
+                        AND estado = 'confirmada'
                     ");
                     $stmt->execute([$cancha_id, $fecha, $hora]);
 
                     if ($stmt->rowCount() == 0) {
-                        $stmt = $pdo->prepare("
-                            INSERT INTO reservas (usuario_id, cancha_id, fecha, hora)
-                            VALUES (?, ?, ?, ?)
-                        ");
-                        if ($stmt->execute([$_SESSION["user_id"], $cancha_id, $fecha, $hora])) {
-                            header("Location: index.php?fecha=$fecha&success=1");
-                            exit();
+
+                        // ✅ Definir si es tarde (después de las 20:00)
+                        $esTarde = (strtotime($hora) >= strtotime("20:00:00"));
+
+                        // ✅ Comprobante obligatorio SOLO si es tarde (validación BACKEND)
+                        if ($esTarde) {
+                            if (!isset($_FILES["comprobante"]) || $_FILES["comprobante"]["error"] !== UPLOAD_ERR_OK) {
+                                $error = "Debes subir un comprobante para realizar la reserva.";
+                            } else {
+                                $maxBytes = 5 * 1024 * 1024; // 5MB
+
+                                if ($_FILES["comprobante"]["size"] > $maxBytes) {
+                                    $error = "El comprobante supera el tamaño máximo permitido (5MB).";
+                                } else {
+                                    $tmpPath = $_FILES["comprobante"]["tmp_name"];
+                                    $imgInfo = @getimagesize($tmpPath);
+
+                                    if ($imgInfo === false) {
+                                        $error = "El comprobante debe ser una imagen válida.";
+                                    } else {
+                                        $extension = strtolower(pathinfo($_FILES["comprobante"]["name"], PATHINFO_EXTENSION));
+                                        if ($extension === "jpeg") $extension = "jpg";
+
+                                        $extPermitidas = ["jpg", "png", "webp"];
+                                        if (!in_array($extension, $extPermitidas)) {
+                                            $error = "Formato no permitido. Usa JPG, PNG o WEBP.";
+                                        }
+                                    }
+                                }
+                            }
                         }
+
+                        // ✅ Insertar SOLO si no hubo error (ej: faltó comprobante)
+                        if (!isset($error)) {
+                            $stmt = $pdo->prepare("
+                                INSERT INTO reservas (usuario_id, cancha_id, fecha, hora)
+                                VALUES (?, ?, ?, ?)
+                            ");
+
+                            if ($stmt->execute([$_SESSION["user_id"], $cancha_id, $fecha, $hora])) {
+
+                                // ✅ Obtener ID de la reserva recién creada
+                                $reservaId = (int)$pdo->lastInsertId();
+
+                                // ✅ Guardar comprobante SIEMPRE
+                                if ($esTarde && isset($_FILES["comprobante"]) && $_FILES["comprobante"]["error"] === UPLOAD_ERR_OK) {
+                                    $tmpPath = $_FILES["comprobante"]["tmp_name"];
+
+                                    $imgInfo = @getimagesize($tmpPath);
+                                    $mime = $imgInfo ? $imgInfo["mime"] : "";
+
+                                    $extMap = [
+                                        "image/jpeg" => "jpg",
+                                        "image/png"  => "png",
+                                        "image/webp" => "webp"
+                                    ];
+                                    $extension = strtolower(pathinfo($_FILES["comprobante"]["name"], PATHINFO_EXTENSION));
+                                        if ($extension === "jpeg") $extension = "jpg";
+                                        $ext = $extension;
+
+                                    // Carpeta: misma carpeta donde está index.php + /comprobantes
+                                    $destDir = __DIR__ . "/comprobantes";
+                                    if (!is_dir($destDir)) {
+                                        @mkdir($destDir, 0755, true);
+                                    }
+
+                                    // Nombre: reserva_<ID>.<ext>
+                                    $destPath = $destDir . "/reserva_" . $reservaId . "." . $ext;
+
+                                    // Mover archivo subido
+                                    @move_uploaded_file($tmpPath, $destPath);
+                                }
+
+                                header("Location: index.php?fecha=$fecha&success=1");
+                                exit();
+                            } else {
+                                $error = "No se pudo registrar la reserva.";
+                            }
+                        }
+
                     } else {
                         $error = "La cancha ya está reservada en ese horario";
                     }
@@ -794,13 +866,22 @@ if ($isAdmin) {
                                 <?php elseif ($esHoraNoDisponible): ?>
                                     <?php echo $esHoraNoDisponibleLunes ? "En mantenimiento" : "No disponible"; ?>
                                 <?php elseif ($cancha["estado"] == "disponible"): ?>
-                                    <form method="POST" style="margin: 0;">
+                                    <form method="POST" enctype="multipart/form-data" style="margin: 0;">
                                         <input type="hidden" name="cancha_id" value="<?php echo $cancha["id"]; ?>">
                                         <input type="hidden" name="hora" value="<?php echo $hora["inicio"]; ?>">
                                         <input type="hidden" name="reservar" value="1">
 
                                         <?php if ($isAdmin): ?>
                                             <input type="hidden" name="usuario_id_asignado" value="">
+                                        <?php else: ?>
+                                            <!-- Input file (se moverá al modal con JS cuando sea tarde) -->
+                                            <input
+                                                type="file"
+                                                name="comprobante"
+                                                accept="image/*"
+                                                class="input-comprobante"
+                                                style="display:none; margin-top:10px;"
+                                            >
                                         <?php endif; ?>
 
                                         <button type="button" class="reservar-btn" onclick="abrirVentanaFlotante(this)">
@@ -890,10 +971,21 @@ if ($isAdmin) {
                 </div>
 
             <?php else: ?>
+
                 <h3>Confirmar reserva</h3>
                 <p>¿Estás seguro de que deseas realizar esta reserva?</p>
+
                 <p id="mensajePago" style="color: red;"></p>
 
+                <div id="contenedorComprobante" style="display:none; text-align:left; margin-top:10px; margin-bottom:10px;">
+                    <label style="display:block; font-weight:bold; margin-bottom:6px;">
+                        Subir comprobante de pago (obligatorio)
+                    </label>
+                    <!-- Aquí se insertará el input file real del form seleccionado -->
+                </div>
+
+                <p id="errorComprobante" style="display:none; color:#b00020; margin-top:8px;"></p>
+                 
                 <div class="ventana-flotante-acciones">
                     <button id="btnConfirmarReserva" class="btn-confirmar">Sí, reservar</button>
                     <button id="btnCancelarReserva" class="btn-cancelar">Cancelar</button>
@@ -905,30 +997,125 @@ if ($isAdmin) {
 
 <script>
 let formularioSeleccionado = null;
+let inputComprobanteActual = null;
 
 function abrirVentanaFlotante(boton) {
     formularioSeleccionado = boton.closest("form");
-    const horaSeleccionada = formularioSeleccionado.querySelector("input[name='hora']").value;
 
-    const horaLimite = "20:00:00";
-    const mensajePago = (horaSeleccionada >= horaLimite) ? "Recuerda que debes realizar el pago." : "";
+    const mensajePagoEl = document.getElementById("mensajePago");
+    if (mensajePagoEl) mensajePagoEl.innerText = "";
 
-    document.getElementById("mensajePago").innerText = mensajePago;
+    const cont = document.getElementById("contenedorComprobante");
+    const err  = document.getElementById("errorComprobante");
+    if (err) { err.style.display = "none"; err.innerText = ""; }
+
+    // ✅ Detectar si el bloque seleccionado es "tarde" (>= 20:00)
+    const horaStr = formularioSeleccionado.querySelector("input[name='hora']")?.value || "00:00:00";
+    const partes = horaStr.split(":");
+    const h = parseInt(partes[0], 10) || 0;
+    const m = parseInt(partes[1], 10) || 0;
+    const esTarde = (h > 20) || (h === 20 && m >= 0);
+
+    // ✅ Mostrar mensaje SOLO si es tarde
+    if (mensajePagoEl) {
+        mensajePagoEl.innerText = esTarde
+            ? "Recuerda que debes realizar el pago antes de la reserva."
+            : "";
+    }
+
+    // Referencia al input file (se queda dentro del form)
+    const inputFile = formularioSeleccionado.querySelector("input[name='comprobante']");
+    inputComprobanteActual = inputFile || null;
+
+    // ✅ Mostrar el bloque de comprobante SOLO si es tarde
+    if (cont) {
+        if (esTarde) {
+            cont.style.display = "block";
+            cont.innerHTML = `
+                <label style="display:block; font-weight:bold; margin-bottom:6px;">
+                    Subir comprobante (obligatorio)
+                </label>
+
+                <button type="button" id="btnElegirArchivo"
+                    style="padding:8px 12px; border:1px solid #ccc; border-radius:6px; cursor:pointer;">
+                    Elegir archivo
+                </button>
+
+                <div id="nombreArchivo" style="margin-top:8px; font-size:14px; color:#333;">
+                    Ningún archivo seleccionado
+                </div>
+            `;
+        } else {
+            cont.style.display = "none";
+            cont.innerHTML = "";
+        }
+    }
+
+    // ✅ Click al input real (sin moverlo del form)
+    if (inputFile) {
+        inputFile.required = esTarde; // obligatorio solo si es tarde
+
+        if (esTarde) {
+            const btnElegir = document.getElementById("btnElegirArchivo");
+            const lblNombre = document.getElementById("nombreArchivo");
+
+            if (btnElegir) btnElegir.onclick = () => inputFile.click();
+
+            inputFile.onchange = () => {
+                if (!lblNombre) return;
+                if (inputFile.files && inputFile.files.length > 0) {
+                    lblNombre.innerText = inputFile.files[0].name;
+                } else {
+                    lblNombre.innerText = "Ningún archivo seleccionado";
+                }
+            };
+        }
+    }
 
     document.getElementById("ventanaFlotante").style.display = "flex";
 }
 
 document.getElementById("btnCancelarReserva").addEventListener("click", () => {
+    // Si movimos el input al modal, lo devolvemos al form y lo ocultamos
+    if (formularioSeleccionado && inputComprobanteActual) {
+        inputComprobanteActual.required = false;
+        inputComprobanteActual.style.display = "none";
+        formularioSeleccionado.appendChild(inputComprobanteActual); // ✅ vuelve al form
+    }
+
     document.getElementById("ventanaFlotante").style.display = "none";
     formularioSeleccionado = null;
+    inputComprobanteActual = null;
 });
 
 <?php if (!$isAdmin): ?>
+
 document.getElementById("btnConfirmarReserva").addEventListener("click", () => {
-    if (formularioSeleccionado) {
-        formularioSeleccionado.submit();
+    if (!formularioSeleccionado) return;
+
+    const horaStr = formularioSeleccionado.querySelector("input[name='hora']")?.value || "00:00:00";
+    const partes = horaStr.split(":");
+    const h = parseInt(partes[0], 10) || 0;
+    const m = parseInt(partes[1], 10) || 0;
+    const esTarde = (h > 20) || (h === 20 && m >= 0);
+
+    const inputFile = (inputComprobanteActual || formularioSeleccionado.querySelector("input[name='comprobante']"));
+    const err = document.getElementById("errorComprobante");
+
+    // ✅ Solo exigir archivo si es tarde
+    if (esTarde) {
+        if (!inputFile || !inputFile.files || inputFile.files.length === 0) {
+            if (err) {
+                err.style.display = "block";
+                err.innerText = "Debes subir un comprobante para realizar la reserva.";
+            }
+            return;
+        }
     }
+
+    formularioSeleccionado.submit();
 });
+
 <?php endif; ?>
 
 // ✅ Solo admin: asignar usuario y reservar
