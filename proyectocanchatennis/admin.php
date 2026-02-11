@@ -372,48 +372,6 @@ $dias = [
         }
 
 
-        @media print {
-            body * {
-                visibility: hidden !important;
-            }
-
-            #seccionReservasActivas, #seccionReservasActivas * {
-                visibility: visible !important;
-            }
-
-            #seccionReservasActivas {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                background: white;
-                padding: 0;
-                margin: 0;
-            }
-
-            /* Ajustes para “PDF” */
-            #seccionReservasActivas table {
-                width: 100% !important;
-                border-collapse: collapse !important;
-                font-size: 12px;
-            }
-
-            #seccionReservasActivas th, 
-            #seccionReservasActivas td {
-                border: 1px solid #000 !important;
-                padding: 6px !important;
-            }
-
-            /* Ocultar cosas del panel al imprimir */
-            .btn, .hamburger, .nav-menu, .header {
-                display: none !important;
-            }
-
-            .no-print {
-                display: none !important;
-            }
-        }
-
 
     </style>
 
@@ -638,42 +596,35 @@ $dias = [
             </table>
         </div>
 
-        <div class="section" id="seccionReservasActivas">
+        <div class="section">
             <h2>Reservas Activas</h2>
-
-            <!-- (Opcional) Encabezado que solo aparece al imprimir -->
-            <div id="printHeader" style="display:none; margin-bottom: 10px;">
-                <h3 style="margin:0;">Reservas Activas</h3>
-                <div style="font-size:12px;">Generado: <span id="printFecha"></span></div>
-                <hr>
-            </div>
 
             <table>
                 <thead>
                     <tr>
-                        <th class="no-print">ID</th>
+                        <th>ID</th>
                         <th>Nombre</th>
                         <th>Apellido</th>
                         <th>Cancha</th>
                         <th>Fecha</th>
                         <th>Hora</th>
-                        <th class="no-print">Fecha Reserva</th>
-                        <th class="no-print">Comprobante</th>
-                        <th class="no-print">Acciones</th>
+                        <th>Fecha Reserva</th>
+                        <th>Comprobante</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($reservas as $reserva): ?>
                         <tr>
-                            <td class="no-print"><?php echo $reserva["id"]; ?></td>
+                            <td><?php echo $reserva["id"]; ?></td>
                             <td><?php echo $reserva["usuario_nombre"]; ?></td>
                             <td><?php echo htmlspecialchars($reserva["usuario_apellido"]); ?></td>
                             <td><?php echo $reserva["cancha_nombre"]; ?></td>
                             <td><?php echo date("d/m/Y", strtotime($reserva["fecha"])); ?></td>
                             <td><?php echo date("H:i", strtotime($reserva["hora"])); ?></td>
-                            <td class="no-print"><?php echo date("d/m/Y H:i", strtotime($reserva["fecha_reserva"])); ?></td>
+                            <td><?php echo date("d/m/Y H:i", strtotime($reserva["fecha_reserva"])); ?></td>
 
-                            <td class="no-print">
+                            <td>
                                 <?php
                                 $reservaId = (int)$reserva["id"];
 
@@ -703,7 +654,7 @@ $dias = [
                                 ?>
                             </td>
 
-                            <td class="no-print">
+                            <td>
                                 <form method="POST" class="form-inline">
                                     <input type="hidden" name="reserva_id" value="<?php echo $reserva["id"]; ?>">
                                     <button type="submit" name="cancelar_reserva" class="btn btn-danger"
@@ -718,9 +669,9 @@ $dias = [
             </table>
 
             <!-- ✅ Botón para “PDF” (imprimir / guardar como PDF) -->
-            <button type="button" class="btn btn-primary" onclick="imprimirReservasActivas()">
-                Descargar PDF (imprimir)
-            </button>
+            <a class="btn btn-primary" href="reservas_activas_pdf.php" target="_blank">
+                Descargar PDF
+            </a>
         </div>
 
     </div>
@@ -738,42 +689,6 @@ function abrirModalActividad() {
 
 function cerrarModalActividad() {
     document.getElementById("modalActividad").style.display = "none";
-}
-
-function imprimirReservasActivas() {
-    const printHeader = document.getElementById("printHeader");
-    const printFecha = document.getElementById("printFecha");
-
-    const ahora = new Date();
-
-    // ✅ Para mostrar dentro del PDF (bonito)
-    if (printFecha) {
-        const fechaTxt = ahora.toLocaleDateString("es-CL");
-        const horaTxt  = ahora.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
-        printFecha.innerText = `${fechaTxt} ${horaTxt}`;
-    }
-
-    // ✅ Para el nombre del PDF (formato seguro: YYYY-MM-DD_HH-mm)
-    const yyyy = ahora.getFullYear();
-    const mm   = String(ahora.getMonth() + 1).padStart(2, "0");
-    const dd   = String(ahora.getDate()).padStart(2, "0");
-    const hh   = String(ahora.getHours()).padStart(2, "0");
-    const min  = String(ahora.getMinutes()).padStart(2, "0");
-    const sello = `${yyyy}-${mm}-${dd}`;
-
-    if (printHeader) printHeader.style.display = "block";
-
-    const tituloOriginal = document.title;
-
-    // ✅ Nombre sugerido del PDF
-    document.title = `Reservas_Activas_${sello}`;
-
-    window.print();
-
-    setTimeout(() => {
-        document.title = tituloOriginal;
-        if (printHeader) printHeader.style.display = "none";
-    }, 500);
 }
 
 </script>

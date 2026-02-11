@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<dwsync>
+<file name="AbstractFrameDecorator.php" server="operamaq.cl/public_html/" local="133314194608941642" remote="133093332000000000" Dst="1" />
+<file name="Block.php" server="operamaq.cl/public_html/" local="133314194609733170" remote="133093332000000000" Dst="1" />
+<file name="Inline.php" server="operamaq.cl/public_html/" local="133314194609733170" remote="133093332000000000" Dst="1" />
+<file name="Image.php" server="operamaq.cl/public_html/" local="133314194609733170" remote="133093332000000000" Dst="1" />
+<file name="ListBullet.php" server="operamaq.cl/public_html/" local="133314194610206037" remote="133093332000000000" Dst="1" />
+<file name="ListBulletImage.php" server="operamaq.cl/public_html/" local="133314194610362285" remote="133093332000000000" Dst="1" />
+<file name="NullFrameDecorator.php" server="operamaq.cl/public_html/" local="133314194610362285" remote="133093332000000000" Dst="1" />
+<file name="Table.php" server="operamaq.cl/public_html/" local="133314194611151700" remote="133093332000000000" Dst="1" />
+<file name="TableCell.php" server="operamaq.cl/public_html/" local="133314194611151700" remote="133093332000000000" Dst="1" />
+<file name="Page.php" server="operamaq.cl/public_html/" local="133314194611307833" remote="133093332000000000" Dst="1" />
+<file name="TableRowGroup.php" server="operamaq.cl/public_html/" local="133314194611776643" remote="133093332000000000" Dst="1" />
+<file name="TableRow.php" server="operamaq.cl/public_html/" local="133314194611776643" remote="133093332000000000" Dst="1" />
+<file name="Text.php" server="operamaq.cl/public_html/" local="133314194611776643" remote="133093332000000000" Dst="1" />
+</dwsync>
