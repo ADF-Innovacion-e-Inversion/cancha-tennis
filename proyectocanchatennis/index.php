@@ -1019,7 +1019,7 @@ function abrirVentanaFlotante(boton) {
     // ✅ Mostrar mensaje SOLO si es tarde
     if (mensajePagoEl) {
         mensajePagoEl.innerText = esTarde
-            ? "Recuerda que debes realizar el pago antes de la reserva."
+            ? "Recuerda que debes realizar el pago de la luz antes de hacer la reserva."
             : "";
     }
 
