@@ -23,11 +23,11 @@ $esLunes = (date("N", strtotime($fecha)) == 1); // 1 significa lunes
 
 // Obtener reservas para la fecha seleccionada
 $stmt = $pdo->prepare("
-    SELECT r.cancha_id, r.hora, c.nombre as cancha_nombre, u.nombre as usuario_nombre 
+    SELECT r.cancha_id, r.hora, r.estado, c.nombre as cancha_nombre, u.nombre as usuario_nombre 
     FROM reservas r 
     JOIN canchas c ON r.cancha_id = c.id 
     JOIN usuarios u ON r.usuario_id = u.id 
-    WHERE r.fecha = ? AND r.estado = 'confirmada'
+    WHERE r.fecha = ? AND r.estado IN ('confirmada','pendiente')
 ");
 $stmt->execute([$fecha]);
 $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -192,7 +192,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
                 WHERE cancha_id = ?
                 AND fecha = ?
                 AND hora = ?
-                AND estado = 'confirmada'
+                AND estado IN ('confirmada','pendiente')
             ");
             $stmt->execute([$cancha_id, $fecha, $hora]);
 
@@ -217,7 +217,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
                         SELECT COUNT(*)
                         FROM reservas
                         WHERE usuario_id = ?
-                        AND estado = 'confirmada'
+                        AND estado IN ('confirmada','pendiente')
                         AND YEARWEEK(fecha_reserva, 1) = YEARWEEK(CURDATE(), 1)
                     ");
                     $stmt->execute([$usuarioIdFinal]);
@@ -234,7 +234,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
                             SELECT COUNT(*)
                             FROM reservas
                             WHERE usuario_id = ?
-                            AND estado = 'confirmada'
+                            AND estado IN ('confirmada','pendiente')
                             AND fecha_reserva >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
                         ");
                         $stmt->execute([$usuarioIdFinal]);
@@ -272,7 +272,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
             SELECT COUNT(*) as total
             FROM reservas
             WHERE usuario_id = ?
-              AND estado = 'confirmada'
+              AND estado IN ('confirmada','pendiente')
               AND YEARWEEK(fecha_reserva, 1) = YEARWEEK(CURDATE(), 1)
         ");
         $stmt->execute([$_SESSION["user_id"]]);
@@ -305,7 +305,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
                     SELECT COUNT(*)
                     FROM reservas
                     WHERE usuario_id = ?
-                      AND estado = 'confirmada'
+                      AND estado IN ('confirmada','pendiente')
                       AND fecha_reserva >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
                 ");
                 $stmt->execute([$_SESSION["user_id"]]);
@@ -318,7 +318,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
                         SELECT fecha_reserva
                         FROM reservas
                         WHERE usuario_id = ?
-                          AND estado = 'confirmada'
+                          AND estado IN ('confirmada','pendiente')
                         ORDER BY fecha_reserva DESC
                         LIMIT 1
                     ");
@@ -349,7 +349,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
                         WHERE cancha_id = ?
                         AND fecha = ?
                         AND hora = ?
-                        AND estado = 'confirmada'
+                        AND estado IN ('confirmada','pendiente')
                     ");
                     $stmt->execute([$cancha_id, $fecha, $hora]);
 
@@ -388,12 +388,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["reservar"])) {
 
                         // ✅ Insertar SOLO si no hubo error (ej: faltó comprobante)
                         if (!isset($error)) {
+                            
+                            // ✅ Definir estado según hora
+                            $estadoNuevaReserva = ($esTarde ? "pendiente" : "confirmada");
+
+                            // ✅ Preparar e insertar reserva
                             $stmt = $pdo->prepare("
-                                INSERT INTO reservas (usuario_id, cancha_id, fecha, hora)
-                                VALUES (?, ?, ?, ?)
+                                INSERT INTO reservas (usuario_id, cancha_id, fecha, hora, estado)
+                                VALUES (?, ?, ?, ?, ?)
                             ");
 
-                            if ($stmt->execute([$_SESSION["user_id"], $cancha_id, $fecha, $hora])) {
+                            if ($stmt->execute([$_SESSION["user_id"], $cancha_id, $fecha, $hora, $estadoNuevaReserva])) {
 
                                 // ✅ Obtener ID de la reserva recién creada
                                 $reservaId = (int)$pdo->lastInsertId();
@@ -449,7 +454,7 @@ $stmt = $pdo->prepare("
     SELECT COUNT(*) as total
     FROM reservas
     WHERE usuario_id = ?
-    AND estado = 'confirmada'
+    AND estado IN ('confirmada','pendiente')
     AND YEARWEEK(fecha_reserva, 1) = YEARWEEK(CURDATE(), 1)
 ");
 $stmt->execute([$_SESSION['user_id']]);
@@ -515,6 +520,7 @@ if ($isAdmin) {
         th { background: #f8f9fa; }
         .disponible { background: #b9f5ff; cursor: pointer; } /* #d4edda  */
         .ocupada { background: #f8d7da; }
+        .pendiente { background: #fff3cd; } /* amarillo suave */
         .reservar-btn { padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
         .reservar-btn:hover { background: #000000; color: #00ff5e}
         
@@ -837,7 +843,8 @@ if ($isAdmin) {
                         <?php foreach ($canchas as $cancha): ?>
                             <?php 
                             // 1) ¿Hay reserva / actividad? (definir primero)
-                            $hayReserva   = isset($reservas_organizadas[$cancha["id"]][$hora["inicio"]]);
+                            $hayReserva = isset($reservas_organizadas[$cancha["id"]][$hora["inicio"]]);
+                            $estadoReserva = $hayReserva ? $reservas_organizadas[$cancha["id"]][$hora["inicio"]]["estado"] : null;
                             $hayActividad = isset($ocupadoPorActividad[$cancha["id"]][$hora["inicio"]]);
                             $estaOcupado  = ($hayReserva || $hayActividad);
 
@@ -857,12 +864,18 @@ if ($isAdmin) {
                             
                             ?>
                             <td class="<?php
-                                echo $estaOcupado
-                                    ? "ocupada"
-                                    : ($esHoraNoDisponible ? "no-disponible" : ($cancha["estado"] == "disponible" ? "disponible" : "ocupada"));
+                                if ($hayReserva && $estadoReserva === "pendiente") {
+                                    echo "pendiente";
+                                } elseif ($estaOcupado) {
+                                    echo "ocupada";
+                                } else {
+                                    echo $esHoraNoDisponible
+                                        ? "no-disponible"
+                                        : ($cancha["estado"] == "disponible" ? "disponible" : "ocupada");
+                                }
                             ?>">
                                 <?php if ($estaOcupado): ?>
-                                    Ocupada
+                                    <?php echo ($estadoReserva === "pendiente") ? "Pendiente" : "Ocupada"; ?>
                                 <?php elseif ($esHoraNoDisponible): ?>
                                     <?php echo $esHoraNoDisponibleLunes ? "En mantenimiento" : "No disponible"; ?>
                                 <?php elseif ($cancha["estado"] == "disponible"): ?>

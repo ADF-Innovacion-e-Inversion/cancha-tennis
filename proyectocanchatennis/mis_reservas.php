@@ -14,7 +14,7 @@ $stmt = $pdo->prepare("
     FROM reservas r 
     JOIN canchas c ON r.cancha_id = c.id 
     WHERE r.usuario_id = ?
-      AND r.estado = 'confirmada'
+      AND r.estado IN ('confirmada','pendiente')
       AND r.fecha >= CURDATE()
     ORDER BY r.fecha, r.hora, r.cancha_id
 ");
@@ -31,7 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
         FROM reservas
         WHERE id = ?
           AND usuario_id = ?
-          AND estado = 'confirmada'
+          AND estado IN ('confirmada','pendiente')
         LIMIT 1
     ");
     $stmt->execute([$reserva_id, $_SESSION["user_id"]]);
@@ -57,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
                 SET estado = 'cancelada'
                 WHERE id = ?
                   AND usuario_id = ?
-                  AND estado = 'confirmada'
+                  AND estado IN ('confirmada','pendiente')
             ");
 
             if ($stmt->execute([$reserva_id, $_SESSION["user_id"]])) {
@@ -79,7 +79,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
         FROM reservas r
         JOIN canchas c ON r.cancha_id = c.id
         WHERE r.usuario_id = ?
-          AND r.estado = 'confirmada'
+          AND r.estado IN ('confirmada','pendiente')
           AND r.fecha >= CURDATE()
         ORDER BY r.fecha, r.hora, r.cancha_id
     ");
@@ -286,6 +286,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
                             <th>Hora</th>
                             <th>Fecha de Reserva</th>
                             <th>Comprobante</th>
+                            <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -333,6 +334,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
                                         echo "—";
                                     }
                                     ?>
+                                </td>
+                                <td>
+                                    <?php echo ($reserva["estado"] === "pendiente") ? "Pendiente" : "Confirmada"; ?>
                                 </td>
                                 <td>
                                     <form method="POST">

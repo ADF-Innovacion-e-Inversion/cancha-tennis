@@ -107,6 +107,23 @@ $actividades = $pdo->query("
     ORDER BY ar.cancha_id, ar.dia_desde, ar.hora_inicio
 ")->fetchAll(PDO::FETCH_ASSOC);
 
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["aceptar_reserva"])) {
+    $reserva_id = (int)($_POST["reserva_id"] ?? 0);
+
+    if ($reserva_id > 0) {
+        $stmt = $pdo->prepare("
+            UPDATE reservas
+            SET estado = 'confirmada'
+            WHERE id = ?
+              AND estado = 'pendiente'
+        ");
+        $stmt->execute([$reserva_id]);
+    }
+
+    header("Location: admin.php?success=5");
+    exit();
+}
+
 // Obtener canchas
 $canchas = $pdo->query("SELECT * FROM canchas")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -119,7 +136,7 @@ $stmt = $pdo->prepare("
     FROM reservas r
     JOIN canchas c ON r.cancha_id = c.id
     JOIN usuarios u ON r.usuario_id = u.id
-    WHERE r.estado = 'confirmada'
+    WHERE r.estado IN ('confirmada','pendiente')
       AND r.fecha >= CURDATE()
     ORDER BY r.fecha, r.hora
 ");
@@ -429,6 +446,7 @@ $dias = [
                 if ($_GET['success'] == 2) echo "Reserva cancelada correctamente";
                 if ($_GET["success"] == 3) echo "Actividad creada correctamente";
                 if ($_GET["success"] == 4) echo "Actividad cancelada correctamente";
+                if ($_GET["success"] == 5) echo "Reserva aceptada correctamente";
                 ?>
             </div>
         <?php endif; ?>
@@ -646,7 +664,9 @@ $dias = [
                                     }
                                 }
 
-                                if ($archivoEncontrado !== "") {
+                                $tieneComprobante = ($archivoEncontrado !== "");
+
+                                if ($tieneComprobante) {
                                     echo "<a class=\"btn btn-primary\" href=\"" . $baseUrl . htmlspecialchars($archivoEncontrado) . "\" target=\"_blank\">Ver</a>";
                                 } else {
                                     echo "—";
@@ -654,7 +674,18 @@ $dias = [
                                 ?>
                             </td>
 
+
                             <td>
+                                <?php if ($reserva["estado"] === "pendiente" && $tieneComprobante): ?>
+                                    <form method="POST" class="form-inline">
+                                        <input type="hidden" name="reserva_id" value="<?php echo (int)$reserva["id"]; ?>">
+                                        <button type="submit" name="aceptar_reserva" class="btn btn-primary"
+                                                onclick="return confirm('¿Aceptar esta reserva y marcarla como confirmada?')">
+                                            Aceptar
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+
                                 <form method="POST" class="form-inline">
                                     <input type="hidden" name="reserva_id" value="<?php echo $reserva["id"]; ?>">
                                     <button type="submit" name="cancelar_reserva" class="btn btn-danger"
