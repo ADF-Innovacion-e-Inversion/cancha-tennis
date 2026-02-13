@@ -6,6 +6,29 @@ if (!isLoggedIn() || !isAdmin()) {
     exit();
 }
 
+// ✅ Cancelar reserva desde historial
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva_historial"])) {
+    $reserva_id = (int)($_POST["reserva_id"] ?? 0);
+
+    if ($reserva_id > 0) {
+        $stmt = $pdo->prepare("
+            UPDATE reservas
+            SET estado = 'cancelada'
+            WHERE id = ?
+              AND estado = 'confirmada'
+        ");
+        if ($stmt->execute([$reserva_id])) {
+            // Si quieres borrar el comprobante al cancelar (igual que admin)
+            if (function_exists("eliminarComprobanteDeReserva")) {
+                eliminarComprobanteDeReserva($reserva_id);
+            }
+        }
+    }
+
+    header("Location: historial.php?success=2");
+    exit();
+}
+
 // Obtener canchas
 $canchas = $pdo->query("SELECT * FROM canchas")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -303,12 +326,13 @@ $reservasHistorial = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <th>Hora</th>
                         <th>Fecha Reserva</th>
                         <th>Comprobante</th>
+                        <th>Acción</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (count($reservasHistorial) === 0): ?>
                         <tr>
-                            <td colspan="8">No hay reservas registradas.</td>
+                            <td colspan="9">No hay reservas registradas.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($reservasHistorial as $reserva): ?>
@@ -347,6 +371,15 @@ $reservasHistorial = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         echo "—";
                                     }
                                     ?>
+                                </td>
+                                <td>
+                                    <form method="POST" class="form-inline">
+                                        <input type="hidden" name="reserva_id" value="<?php echo (int)$reserva["id"]; ?>">
+                                        <button type="submit" name="cancelar_reserva_historial" class="btn btn-danger"
+                                                onclick="return confirm('¿Estás seguro de cancelar esta reserva?')">
+                                            Cancelar
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

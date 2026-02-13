@@ -1,5 +1,6 @@
 <?php
 include 'config.php';
+require_once __DIR__ . "/mail_reserva.php";
 
 if (!isLoggedIn() || !isAdmin()) {
     header('Location: login.php');
@@ -19,13 +20,50 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cambiar_estado'])) {
 
 // Procesar cancelación de reserva
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cancelar_reserva'])) {
-    $reserva_id = $_POST['reserva_id'];
-    
-    $stmt = $pdo->prepare("UPDATE reservas SET estado = 'cancelada' WHERE id = ?");
-    if ($stmt->execute([$reserva_id])) {
-        // ✅ Eliminar comprobante del disco
-        eliminarComprobanteDeReserva($reserva_id);
+
+    $reserva_id = (int)$_POST['reserva_id'];
+
+    // 1️⃣ Obtener datos antes de actualizar
+    $stmt = $pdo->prepare("
+        SELECT r.fecha, r.hora, r.cancha_id,
+               u.nombre, u.email,
+               c.nombre AS cancha_nombre
+        FROM reservas r
+        JOIN usuarios u ON r.usuario_id = u.id
+        JOIN canchas c ON r.cancha_id = c.id
+        WHERE r.id = ?
+        LIMIT 1
+    ");
+    $stmt->execute([$reserva_id]);
+    $reservaData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($reservaData) {
+
+        // 2️⃣ Actualizar estado
+        $stmt = $pdo->prepare("
+            UPDATE reservas
+            SET estado = 'cancelada'
+            WHERE id = ?
+        ");
+
+        if ($stmt->execute([$reserva_id])) {
+
+            eliminarComprobanteDeReserva($reserva_id);
+
+            // 3️⃣ Enviar correo
+            enviarEmailReserva(
+                $reservaData["email"],
+                $reservaData["nombre"],
+                [
+                    "estado" => "cancelada",
+                    "fecha" => date("d/m/Y", strtotime($reservaData["fecha"])),
+                    "hora" => date("H:i", strtotime($reservaData["hora"])),
+                    "canchaNombre" => $reservaData["cancha_nombre"]
+                ]
+            );
+        }
     }
+
     header('Location: admin.php?success=2');
     exit();
 }
@@ -108,16 +146,49 @@ $actividades = $pdo->query("
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["aceptar_reserva"])) {
+
     $reserva_id = (int)($_POST["reserva_id"] ?? 0);
 
     if ($reserva_id > 0) {
+
+        // 1️⃣ Obtener datos antes de actualizar
         $stmt = $pdo->prepare("
-            UPDATE reservas
-            SET estado = 'confirmada'
-            WHERE id = ?
-              AND estado = 'pendiente'
+            SELECT r.fecha, r.hora, r.cancha_id,
+                   u.nombre, u.email,
+                   c.nombre AS cancha_nombre
+            FROM reservas r
+            JOIN usuarios u ON r.usuario_id = u.id
+            JOIN canchas c ON r.cancha_id = c.id
+            WHERE r.id = ?
+              AND r.estado = 'pendiente'
+            LIMIT 1
         ");
         $stmt->execute([$reserva_id]);
+        $reservaData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($reservaData) {
+
+            // 2️⃣ Confirmar reserva
+            $stmt = $pdo->prepare("
+                UPDATE reservas
+                SET estado = 'confirmada'
+                WHERE id = ?
+                  AND estado = 'pendiente'
+            ");
+            $stmt->execute([$reserva_id]);
+
+            // 3️⃣ Enviar correo
+            enviarEmailReserva(
+                $reservaData["email"],
+                $reservaData["nombre"],
+                [
+                    "estado" => "confirmada",
+                    "fecha" => date("d/m/Y", strtotime($reservaData["fecha"])),
+                    "hora" => date("H:i", strtotime($reservaData["hora"])),
+                    "canchaNombre" => $reservaData["cancha_nombre"]
+                ]
+            );
+        }
     }
 
     header("Location: admin.php?success=5");

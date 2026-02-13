@@ -1,5 +1,6 @@
 <?php
 include 'config.php';
+require_once __DIR__ . "/mail_reserva.php";
 
 if (!isLoggedIn()) {
     header('Location: login.php');
@@ -25,15 +26,15 @@ $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) {
     $reserva_id = (int)($_POST["reserva_id"] ?? 0);
 
-    // 1) Traer SOLO la reserva que se quiere cancelar
     $stmt = $pdo->prepare("
-        SELECT fecha, hora
+        SELECT fecha, hora, cancha_id
         FROM reservas
         WHERE id = ?
-          AND usuario_id = ?
-          AND estado IN ('confirmada','pendiente')
+        AND usuario_id = ?
+        AND estado IN ('confirmada','pendiente')
         LIMIT 1
     ");
+
     $stmt->execute([$reserva_id, $_SESSION["user_id"]]);
     $reserva = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -64,6 +65,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["cancelar_reserva"])) 
 
                 // ✅ Eliminar comprobante del disco
                 eliminarComprobanteDeReserva($reserva_id);
+
+                $stmtU = $pdo->prepare("SELECT nombre, email FROM usuarios WHERE id = ?");
+                $stmtU->execute([$_SESSION["user_id"]]);
+                $u = $stmtU->fetch(PDO::FETCH_ASSOC);
+
+                $stmtC = $pdo->prepare("SELECT nombre FROM canchas WHERE id = ?");
+                $stmtC->execute([(int)$reserva["cancha_id"]]);
+                $canchaNombre = $stmtC->fetchColumn();
+
+                if ($u && $canchaNombre) {
+                    enviarEmailReserva($u["email"], $u["nombre"], [
+                        "estado" => "cancelada",
+                        "fecha" => date("d/m/Y", strtotime($reserva["fecha"])),
+                        "hora" => date("H:i", strtotime($reserva["hora"])),
+                        "canchaNombre" => $canchaNombre
+                    ]);
+                }
 
                 header("Location: mis_reservas.php?success=1");
                 exit();
