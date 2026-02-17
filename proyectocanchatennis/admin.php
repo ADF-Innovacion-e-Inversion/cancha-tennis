@@ -195,6 +195,55 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["aceptar_reserva"])) {
     exit();
 }
 
+// ✅ Reestablecer contraseña (admin)
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["reset_password"])) {
+
+    $usuarioId = (int)($_POST["usuario_id_reset"] ?? 0);
+
+    if ($usuarioId > 0) {
+
+        // 1) Traer RUT del usuario
+        $stmt = $pdo->prepare("SELECT rut FROM usuarios WHERE id = ? LIMIT 1");
+        $stmt->execute([$usuarioId]);
+        $rut = $stmt->fetchColumn();
+
+        if ($rut) {
+            // 2) Normalizar: quitar guion, puntos, espacios, etc.
+            $rutLimpio = preg_replace("/[^0-9kK]/", "", $rut);
+
+            // 3) Quitar DV (último char)
+            if (strlen($rutLimpio) >= 2) {
+                $rutSinDv = substr($rutLimpio, 0, -1);
+
+                // 4) Últimos 4 del cuerpo
+                $passwordPlano = substr($rutSinDv, -4);
+                $hashed = password_hash($passwordPlano, PASSWORD_DEFAULT);
+
+                // 5) Actualizar password + dejar temporal
+                $stmt = $pdo->prepare("
+                    UPDATE usuarios
+                    SET password = ?, password_temporal = 1
+                    WHERE id = ?
+                ");
+                $stmt->execute([$hashed, $usuarioId]);
+
+                header("Location: admin.php?success=6");
+                exit();
+            }
+        }
+    }
+
+    header("Location: admin.php?error=reset_invalido");
+    exit();
+}
+
+//obtener usuarios para modificar la contraseña
+$usuariosParaAsignar = $pdo->query("
+    SELECT id, nombre, apellido
+    FROM usuarios
+    ORDER BY nombre ASC, apellido ASC
+")->fetchAll(PDO::FETCH_ASSOC);
+
 // Obtener canchas
 $canchas = $pdo->query("SELECT * FROM canchas")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -493,6 +542,9 @@ $dias = [
                             Registrar
                         </button>
                     </form>
+                    <button type="button" class="btn-registro" onclick="abrirModalReset()">
+                        Reestablecer Contraseña
+                    </button>
                     <form action="historial.php" method="get">
                         <button type="submit" class="btn-historial">
                             Historial
@@ -518,6 +570,7 @@ $dias = [
                 if ($_GET["success"] == 3) echo "Actividad creada correctamente";
                 if ($_GET["success"] == 4) echo "Actividad cancelada correctamente";
                 if ($_GET["success"] == 5) echo "Reserva aceptada correctamente";
+                if ($_GET["success"] == 6) echo "Contraseña reestablecida correctamente";
                 ?>
             </div>
         <?php endif; ?>
@@ -629,6 +682,52 @@ $dias = [
                         <button type="submit" class="btn btn-primary">Crear</button>
                         <button type="button" class="btn btn-danger" onclick="cerrarModalActividad()">Cerrar</button>
                     </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="modalReset" class="ventana-flotante">
+            <div class="ventana-flotante-contenido" style="width: 520px; text-align:left;">
+                <h3 style="text-align:center; margin-top:0;">Reestablecer Contraseña</h3>
+
+                <p style="font-size:14px; margin-bottom:12px;">
+                    Al reestablecer, la contraseña vuelve a ser los últimos 4 dígitos del RUT (sin DV) y quedará como temporal.
+                </p>
+
+                <div style="max-height: 320px; overflow:auto; border:1px solid #ccc; border-radius:8px;">
+                    <table style="width:100%; border-collapse:collapse; margin:0;">
+                        <thead>
+                            <tr>
+                                <th style="border:1px solid #ddd; padding:8px;">Nombre</th>
+                                <th style="border:1px solid #ddd; padding:8px;">Apellido</th>
+                                <th style="border:1px solid #ddd; padding:8px;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($usuariosParaAsignar as $u): ?>
+                                <tr>
+                                    <td style="border:1px solid #ddd; padding:8px;"><?php echo htmlspecialchars($u["nombre"]); ?></td>
+                                    <td style="border:1px solid #ddd; padding:8px;"><?php echo htmlspecialchars($u["apellido"]); ?></td>
+                                    <td style="border:1px solid #ddd; padding:8px; text-align:center;">
+                                        <button type="button" class="btn btn-primary"
+                                            onclick="confirmarReset(<?php echo (int)$u["id"]; ?>)">
+                                            Reestablecer
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="ventana-flotante-acciones" style="margin-top:15px;">
+                    <button type="button" class="btn btn-danger" onclick="cerrarModalReset()">Cerrar</button>
+                </div>
+
+                <!-- Form oculto que hace el POST -->
+                <form id="formResetPassword" method="POST" style="display:none;">
+                    <input type="hidden" name="reset_password" value="1">
+                    <input type="hidden" name="usuario_id_reset" id="usuario_id_reset" value="">
                 </form>
             </div>
         </div>
@@ -791,6 +890,19 @@ function abrirModalActividad() {
 
 function cerrarModalActividad() {
     document.getElementById("modalActividad").style.display = "none";
+}
+
+function abrirModalReset() {
+    document.getElementById("modalReset").style.display = "flex";
+}
+
+function cerrarModalReset() {
+    document.getElementById("modalReset").style.display = "none";
+}
+
+function confirmarReset(userId) {
+    document.getElementById("usuario_id_reset").value = userId;
+    document.getElementById("formResetPassword").submit();
 }
 
 </script>
